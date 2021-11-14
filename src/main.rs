@@ -31,12 +31,9 @@ impl FromStr for HeaderTuple {
         lazy_static! {
             static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
         }
-        let header_split = RE.captures(header_string).ok_or(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
-                header_string
-            ),
+        let header_split = RE.captures(header_string).ok_or(anyhow::anyhow!(
+            "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
+            header_string
         ))?;
         Ok(HeaderTuple(
             HeaderName::from_str(&header_split[1])?,
@@ -55,12 +52,9 @@ impl FromStr for QueryTuple {
             static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
         }
         let query = query_string.to_string();
-        let header_split = RE.captures(&query).ok_or(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
-                query_string
-            ),
+        let header_split = RE.captures(&query).ok_or(anyhow::anyhow!(
+            "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
+            query_string
         ))?;
         Ok(QueryTuple(
             header_split[1].to_string(),
@@ -82,36 +76,33 @@ fn print_completions<G: Generator>(gen: G, app: &mut App) {
     generate(gen, app, app.get_name().to_string(), &mut io::stdout());
 }
 
-fn validate_url(str_url: &str) -> Result<Url, io::Error> {
+fn validate_url(str_url: &str) -> Result<Url> {
     let parsed_url = Url::parse(str_url);
     match parsed_url {
         Ok(url) => {
             if !["https", "http"].contains(&url.scheme()) {
-                Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
+                Err(anyhow::anyhow!(
                     "Apix only supports http(s) protocols for now",
                 ))
             } else {
                 Ok(url)
             }
         }
-        Err(err) => Err(io::Error::new(io::ErrorKind::InvalidInput, err)),
+        Err(err) => Err(anyhow::anyhow!("{}", err)),
     }
 }
 
-fn validate_param(param: &str, request_type: RequestParam) -> Result<(), io::Error> {
+fn validate_param(param: &str, request_type: RequestParam) -> Result<()> {
     lazy_static! {
         static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap();
     }
     if RE.is_match(param) {
         Ok(())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            format!(
-                "Bad {} format: \"{}\", should be of the form \"<name>:<value>\"",
-                request_type, param
-            ),
+        Err(anyhow::anyhow!(
+            "Bad {} format: \"{}\", should be of the form \"<name>:<value>\"",
+            request_type,
+            param
         ))
     }
 }
@@ -224,10 +215,18 @@ fn build_cli() -> App<'static> {
                 .about("get an http ressource")
                 .args(build_request_args()),
             App::new("head").args(build_request_args()),
-            App::new("post").args(build_request_args()),
-            App::new("delete").args(build_request_args()),
-            App::new("put").args(build_request_args()),
-            App::new("patch").args(build_request_args()),
+            App::new("post")
+                .about("post to an http ressource")
+                .args(build_request_args()),
+            App::new("delete")
+                .about("delete an http ressource")
+                .args(build_request_args()),
+            App::new("put")
+                .about("put to an http ressource")
+                .args(build_request_args()),
+            App::new("patch")
+                .about("patch an http ressource")
+                .args(build_request_args()),
             App::new("exec")
                 .about("execute a request from the current API context")
                 .args(build_request_args()),
@@ -264,12 +263,7 @@ async fn handle_import(url: &str) -> Result<()> {
     let open_api = reqwest::get(url).await?.text().await?;
     let result = import::import_api(open_api, import::OpenApiType::YAML)
         .await
-        .map_err(|e| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("Invalid Open Api description\n{}", e),
-            )
-        })?;
+        .map_err(|e| anyhow::anyhow!("Invalid Open Api description\n{}", e))?;
     println!("api {}", serde_json::to_string(&result)?);
     Ok(())
 }
@@ -296,13 +290,14 @@ fn match_queries(matches: &clap::ArgMatches) -> Option<HashMap<String, String>> 
     }
 }
 
-fn match_body(matches: &clap::ArgMatches) -> Option<String> {
+fn match_body(matches: &clap::ArgMatches) -> Result<String> {
     if let Some(body) = matches.value_of("body") {
-        Some(body.to_string())
+        Ok(body.to_string())
     } else if let Some(file) = matches.value_of("file") {
-        Some(fs::read_to_string(file).unwrap())
+        fs::read_to_string(file)
+            .map_err(|err| anyhow::anyhow!("Could not read file {}: {}", file, err))
     } else {
-        None
+        Ok(String::new())
     }
 }
 
@@ -380,7 +375,7 @@ async fn main() -> Result<()> {
                     .request(Method::from_str(&method.to_uppercase())?, url)
                     .headers(match_headers(matches).unwrap_or_default())
                     .query(&match_queries(matches).unwrap_or_default())
-                    .body(match_body(matches).unwrap_or_default())
+                    .body(match_body(matches)?)
                     .build()?;
                 if matches.is_present("verbose") {
                     req.print(&theme)?;

@@ -2,7 +2,6 @@ use super::http_utils::Language;
 use anyhow::Result;
 use bat::{Input, PrettyPrinter};
 use reqwest::{Request, Response};
-use std::io;
 use url::Position;
 
 pub trait HttpDisplay {
@@ -17,12 +16,7 @@ pub fn pretty_print(content: &[u8], theme: &str, language: &str) -> Result<()> {
     .rule(true)
     .theme(theme)
     .print()
-    .map_err(|err| {
-      io::Error::new(
-        io::ErrorKind::InvalidData,
-        format!("Failed to print result: {}", err),
-      )
-    })?;
+    .map_err(|err| anyhow::anyhow!("Failed to print result: {}", err))?;
   Ok(())
 }
 
@@ -33,10 +27,10 @@ impl HttpDisplay for Request {
       method = self.method(),
       endpoint = &self.url()[Position::BeforePath..],
       protocol = self.version(),
-      host = self.url().host_str().ok_or(io::Error::new(
-        io::ErrorKind::InvalidInput,
-        format!("invalid host in URL: {}", self.url())
-      ))?
+      host = self
+        .url()
+        .host_str()
+        .ok_or(anyhow::anyhow!("invalid host in URL: {}", self.url()))?
     );
     for header in self.headers() {
       output.push_str(&format!("{}: {}\n", header.0.as_str(), header.1.to_str()?));
