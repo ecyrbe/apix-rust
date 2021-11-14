@@ -44,3 +44,26 @@ pub fn read_config() -> Result<ApixConfig> {
   }
   Ok(ApixConfig::default())
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  // test apix has default config
+  #[test]
+  fn test_default_config() {
+    let config = ApixConfig::default();
+    assert_eq!(config.theme, "Coldark-Dark");
+  }
+  // test ApixConfig deserialize
+  #[test]
+  fn test_config_deserialize() {
+    let config = r#"
+      theme: "Coldark-Dark"
+      rust: "rust"
+    "#;
+    let config: ApixConfig = serde_yaml::from_str(config).unwrap();
+    assert_eq!(config.theme, "Coldark-Dark");
+    assert_eq!(config.extensions.get("rust").unwrap(), "rust");
+  }
+}
