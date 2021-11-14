@@ -316,7 +316,6 @@ async fn main() -> Result<()> {
         Some(("completions", matches)) => {
             if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
                 let mut app = build_cli();
-                println!("debug {}", generator);
                 print_completions(generator, &mut app);
             }
         }
@@ -324,22 +323,24 @@ async fn main() -> Result<()> {
             Some(("list", _)) => {
                 pretty_print(serde_yaml::to_string(&config)?.as_bytes(), &theme, "yaml")?;
             }
-            Some(("set", matches)) => {
-                let key = matches.value_of("name").unwrap();
-                let value = matches.value_of("value").unwrap();
-                if let Some(old_value) = config.set(key.to_string(), value.to_string()) {
-                    println!("Replaced config key");
-                    pretty_print(
-                        format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
-                        &theme,
-                        "diff",
-                    )?;
-                } else {
-                    println!("Set config key");
-                    pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+            Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
+                (Some(key), Some(value)) => {
+                    config.set(key.to_string(), value.to_string());
+                    if let Some(old_value) = config.set(key.to_string(), value.to_string()) {
+                        println!("Replaced config key");
+                        pretty_print(
+                            format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
+                            &theme,
+                            "diff",
+                        )?;
+                    } else {
+                        println!("Set config key");
+                        pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+                    }
+                    config.save_config()?;
                 }
-                config.save_config()?;
-            }
+                _ => {}
+            },
             Some(("get", matches)) => {
                 let key = matches.value_of("name").unwrap();
                 if let Some(value) = config.get(key) {
