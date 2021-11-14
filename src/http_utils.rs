@@ -46,6 +46,7 @@ where
 mod test_get_language {
   use super::*;
   use reqwest::header::CONTENT_TYPE;
+  use test_case::test_case;
 
   // Mock HttpHeaders
   struct MockHttpHeaders {
@@ -81,25 +82,16 @@ mod test_get_language {
     }
   }
 
-  // vec intance of HttpHeaders for all test cases
-  fn get_http_test_cases() -> Vec<(MockHttpHeaders, &'static str)> {
-    vec![
-      (
-        MockHttpHeaders::from_content_type("application/json"),
-        "json",
-      ),
-      (MockHttpHeaders::from_content_type("application/xml"), "xml"),
-      (MockHttpHeaders::from_content_type("text/html"), "html"),
-      (MockHttpHeaders::from_content_type("text/css"), "css"),
-      (MockHttpHeaders::from_content_type("text/javascript"), "js"),
-      (MockHttpHeaders::from_content_type("text/plain"), "txt"),
-    ]
-  }
   // test get language for all test cases
-  #[test]
-  fn test_get_language() {
-    for (headers, language) in get_http_test_cases() {
-      assert_eq!(headers.get_language(), Some(language));
-    }
+  #[test_case("application/json" => "json")]
+  #[test_case("application/xml" => "xml")]
+  #[test_case("text/html" => "html")]
+  #[test_case("text/css" => "css")]
+  #[test_case("text/javascript" => "js")]
+  #[test_case("text/plain" => "txt")]
+  fn test_get_language(content_type: &str) -> &str {
+    MockHttpHeaders::from_content_type(content_type)
+      .get_language()
+      .unwrap()
   }
 }
