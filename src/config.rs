@@ -26,7 +26,7 @@ impl Default for ApixConfig {
   }
 }
 
-// read yaml config file from env::home_dir to ApixConfig
+// read yaml config file from home_dir to ApixConfig
 pub fn read_config() -> Result<ApixConfig> {
   //check if apix directory exists else create it
   let apix_dir = dirs::home_dir()
