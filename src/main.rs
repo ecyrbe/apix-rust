@@ -3,9 +3,9 @@ mod http_display;
 mod http_utils;
 mod import;
 use anyhow::Result;
-use bat::{Input, PrettyPrinter};
 use clap::{crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
+use config::ApixConfig;
 use http_display::{pretty_print, HttpDisplay};
 use http_utils::Language;
 use lazy_static::lazy_static;
@@ -196,8 +196,19 @@ fn build_cli() -> App<'static> {
                 .about("configuration settings")
                 .subcommands([
                     App::new("list"),
-                    App::new("set"),
-                    App::new("get"),
+                    App::new("set").about("set configuration value").args([
+                        Arg::new("name")
+                            .about("name of configuration value to set")
+                            .required(true)
+                            .index(1),
+                        Arg::new("value")
+                            .about("value to set configuration value to")
+                            .required(true)
+                            .index(2),
+                    ]),
+                    App::new("get")
+                        .about("get a configuration value")
+                        .args([Arg::new("key").about("key to get").required(true)]),
                     App::new("delete"),
                 ]),
             App::new("history").about("show history of requests sent (require project)"),
@@ -291,7 +302,8 @@ fn match_body(matches: &clap::ArgMatches) -> Option<String> {
 async fn main() -> Result<()> {
     let matches = build_cli().get_matches();
     // read config file
-    let mut config = config::read_config()?;
+    let mut config = ApixConfig::read_config()?;
+    let theme = config.get("theme").unwrap();
     match matches.subcommand() {
         Some(("completions", matches)) => {
             if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
@@ -302,24 +314,22 @@ async fn main() -> Result<()> {
         }
         Some(("config", matches)) => match matches.subcommand() {
             Some(("list", _)) => {
-                pretty_print(
-                    serde_yaml::to_string(&config)?.as_bytes(),
-                    &config.theme,
-                    "yaml",
-                )?;
+                pretty_print(serde_yaml::to_string(&config)?.as_bytes(), &theme, "yaml")?;
             }
             Some(("set", matches)) => {
-                let key = matches.value_of("key").unwrap();
+                let key = matches.value_of("name").unwrap();
                 let value = matches.value_of("value").unwrap();
-                config.extensions.insert(key.to_string(), value.to_string());
+                config.set(key.to_string(), value.to_string());
+                config.save_config()?;
             }
             Some(("get", matches)) => {
                 let key = matches.value_of("key").unwrap();
-                println!("{}", config.extensions.get(key).unwrap());
+                println!("{}", config.get(key).unwrap());
             }
             Some(("delete", matches)) => {
                 let key = matches.value_of("key").unwrap();
-                config.extensions.remove(key);
+                config.delete(key);
+                config.save_config()?;
             }
             _ => {}
         },
@@ -349,29 +359,17 @@ async fn main() -> Result<()> {
                     .body(match_body(matches).unwrap_or_default())
                     .build()?;
                 if matches.is_present("verbose") {
-                    req.print(&config.theme)?;
+                    req.print(&theme)?;
                     println!("");
                 }
                 let result = client.execute(req).await?;
                 if matches.is_present("verbose") {
-                    result.print(&config.theme)?;
+                    result.print(&theme)?;
                     println!("");
                 }
                 let language = result.get_language();
                 let body = result.text().await?;
-                PrettyPrinter::new()
-                    .input(Input::from_reader(body.as_bytes()))
-                    .language(language.unwrap_or_default())
-                    .header(false)
-                    .rule(true)
-                    .theme(&config.theme)
-                    .print()
-                    .map_err(|err| {
-                        io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            format!("Failed to print result: {}", err),
-                        )
-                    })?;
+                pretty_print(body.as_bytes(), &theme, language.unwrap_or_default())?;
             }
         }
         _ => {}
