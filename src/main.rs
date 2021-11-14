@@ -206,10 +206,18 @@ fn build_cli() -> App<'static> {
                             .required(true)
                             .index(2),
                     ]),
-                    App::new("get")
-                        .about("get a configuration value")
-                        .args([Arg::new("key").about("key to get").required(true)]),
-                    App::new("delete"),
+                    App::new("get").about("get a configuration value").arg(
+                        Arg::new("name")
+                            .about("name of configuration value to get")
+                            .required(true),
+                    ),
+                    App::new("delete")
+                        .about("delete a configuration value")
+                        .arg(
+                            Arg::new("name")
+                                .about("name of configuration value to delete")
+                                .required(true),
+                        ),
                 ]),
             App::new("history").about("show history of requests sent (require project)"),
             App::new("get")
@@ -303,7 +311,7 @@ async fn main() -> Result<()> {
     let matches = build_cli().get_matches();
     // read config file
     let mut config = ApixConfig::read_config()?;
-    let theme = config.get("theme").unwrap();
+    let theme = config.get("theme").unwrap().clone();
     match matches.subcommand() {
         Some(("completions", matches)) => {
             if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
@@ -319,17 +327,32 @@ async fn main() -> Result<()> {
             Some(("set", matches)) => {
                 let key = matches.value_of("name").unwrap();
                 let value = matches.value_of("value").unwrap();
-                config.set(key.to_string(), value.to_string());
+                if let Some(old_value) = config.set(key.to_string(), value.to_string()) {
+                    println!("Replaced config key");
+                    pretty_print(
+                        format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
+                        &theme,
+                        "diff",
+                    )?;
+                } else {
+                    println!("Set config key");
+                    pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+                }
                 config.save_config()?;
             }
             Some(("get", matches)) => {
-                let key = matches.value_of("key").unwrap();
-                println!("{}", config.get(key).unwrap());
+                let key = matches.value_of("name").unwrap();
+                if let Some(value) = config.get(key) {
+                    pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
+                }
             }
             Some(("delete", matches)) => {
-                let key = matches.value_of("key").unwrap();
-                config.delete(key);
-                config.save_config()?;
+                let key = matches.value_of("name").unwrap();
+                if let Some(value) = config.delete(key) {
+                    println!("Deleted config key");
+                    pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
+                    config.save_config()?;
+                }
             }
             _ => {}
         },
