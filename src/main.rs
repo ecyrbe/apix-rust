@@ -1,3 +1,5 @@
+mod cli_params;
+mod cli_validators;
 mod config;
 mod http_display;
 mod http_utils;
@@ -5,106 +7,19 @@ mod import;
 use anyhow::Result;
 use clap::{crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
+use cli_params::{match_body, match_headers, match_queries, RequestParam};
+use cli_validators::{validate_param, validate_url};
 use config::ApixConfig;
 use http_display::{pretty_print, HttpDisplay};
 use http_utils::Language;
 use lazy_static::lazy_static;
-use regex::Regex;
-use reqwest::{
-    header::{HeaderMap, HeaderName, HeaderValue},
-    Method,
-};
-use std::collections::HashMap;
-use std::fs;
+use reqwest::Method;
 use std::io;
 use std::str::FromStr;
 use std::string::ToString;
-use strum_macros::Display;
-use url::Url;
-
-#[derive(Debug)]
-struct HeaderTuple(HeaderName, HeaderValue);
-
-impl FromStr for HeaderTuple {
-    type Err = anyhow::Error;
-    fn from_str(header_string: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
-        }
-        let header_split = RE.captures(header_string).ok_or(anyhow::anyhow!(
-            "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
-            header_string
-        ))?;
-        Ok(HeaderTuple(
-            HeaderName::from_str(&header_split[1])?,
-            HeaderValue::from_str(&header_split[2])?,
-        ))
-    }
-}
-
-#[derive(Debug)]
-struct QueryTuple(String, String);
-
-impl FromStr for QueryTuple {
-    type Err = anyhow::Error;
-    fn from_str(query_string: &str) -> Result<Self, Self::Err> {
-        lazy_static! {
-            static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
-        }
-        let query = query_string.to_string();
-        let header_split = RE.captures(&query).ok_or(anyhow::anyhow!(
-            "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
-            query_string
-        ))?;
-        Ok(QueryTuple(
-            header_split[1].to_string(),
-            header_split[2].to_string(),
-        ))
-    }
-}
-
-#[derive(Display, Debug)]
-#[strum(serialize_all = "snake_case")]
-enum RequestParam {
-    Header,
-    Cookie,
-    Query,
-    Variable,
-}
 
 fn print_completions<G: Generator>(gen: G, app: &mut App) {
     generate(gen, app, app.get_name().to_string(), &mut io::stdout());
-}
-
-fn validate_url(str_url: &str) -> Result<Url> {
-    let parsed_url = Url::parse(str_url);
-    match parsed_url {
-        Ok(url) => {
-            if !["https", "http"].contains(&url.scheme()) {
-                Err(anyhow::anyhow!(
-                    "Apix only supports http(s) protocols for now",
-                ))
-            } else {
-                Ok(url)
-            }
-        }
-        Err(err) => Err(anyhow::anyhow!("{}", err)),
-    }
-}
-
-fn validate_param(param: &str, request_type: RequestParam) -> Result<()> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap();
-    }
-    if RE.is_match(param) {
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!(
-            "Bad {} format: \"{}\", should be of the form \"<name>:<value>\"",
-            request_type,
-            param
-        ))
-    }
 }
 
 fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
@@ -266,39 +181,6 @@ async fn handle_import(url: &str) -> Result<()> {
         .map_err(|e| anyhow::anyhow!("Invalid Open Api description\n{}", e))?;
     println!("api {}", serde_json::to_string(&result)?);
     Ok(())
-}
-
-fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::HeaderMap> {
-    if let Ok(header_tuples) = matches.values_of_t::<HeaderTuple>("header") {
-        let headers = header_tuples
-            .iter()
-            .map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-        Some(HeaderMap::from_iter(headers))
-    } else {
-        None
-    }
-}
-
-fn match_queries(matches: &clap::ArgMatches) -> Option<HashMap<String, String>> {
-    if let Ok(query_tuples) = matches.values_of_t::<QueryTuple>("query") {
-        let queries = query_tuples
-            .iter()
-            .map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-        Some(HashMap::from_iter(queries))
-    } else {
-        None
-    }
-}
-
-fn match_body(matches: &clap::ArgMatches) -> Result<String> {
-    if let Some(body) = matches.value_of("body") {
-        Ok(body.to_string())
-    } else if let Some(file) = matches.value_of("file") {
-        fs::read_to_string(file)
-            .map_err(|err| anyhow::anyhow!("Could not read file {}: {}", file, err))
-    } else {
-        Ok(String::new())
-    }
 }
 
 #[tokio::main]
