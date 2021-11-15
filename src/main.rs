@@ -1,22 +1,20 @@
-mod cli_params;
-mod cli_validators;
 mod config;
 mod http_display;
 mod http_utils;
 mod import;
+mod match_params;
+mod requests;
+mod validators;
 use anyhow::Result;
 use clap::{crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
-use cli_params::{match_body, match_headers, match_queries, RequestParam};
-use cli_validators::{validate_param, validate_url};
 use config::ApixConfig;
-use http_display::{pretty_print, HttpDisplay};
-use http_utils::Language;
+use http_display::pretty_print;
 use lazy_static::lazy_static;
-use reqwest::Method;
+use match_params::{match_body, match_headers, match_queries, RequestParam};
 use std::io;
-use std::str::FromStr;
 use std::string::ToString;
+use validators::{validate_param, validate_url};
 
 fn print_completions<G: Generator>(gen: G, app: &mut App) {
     generate(gen, app, app.get_name().to_string(), &mut io::stdout());
@@ -252,25 +250,16 @@ async fn main() -> Result<()> {
         },
         Some((method, matches)) => {
             if let Some(url) = matches.value_of("url") {
-                let client = reqwest::Client::new();
-                let req = client
-                    .request(Method::from_str(&method.to_uppercase())?, url)
-                    .headers(match_headers(matches).unwrap_or_default())
-                    .query(&match_queries(matches).unwrap_or_default())
-                    .body(match_body(matches)?)
-                    .build()?;
-                if matches.is_present("verbose") {
-                    req.print(&theme)?;
-                    println!("");
-                }
-                let result = client.execute(req).await?;
-                if matches.is_present("verbose") {
-                    result.print(&theme)?;
-                    println!("");
-                }
-                let language = result.get_language();
-                let body = result.text().await?;
-                pretty_print(body.as_bytes(), &theme, language.unwrap_or_default())?;
+                requests::make_request(
+                    &url,
+                    &method,
+                    match_headers(matches).unwrap_or_default(),
+                    &match_queries(matches).unwrap_or_default(),
+                    match_body(matches)?,
+                    matches.is_present("verbose"),
+                    &theme,
+                )
+                .await?;
             }
         }
         _ => {}
