@@ -12,8 +12,6 @@ pub fn pretty_print(content: &[u8], theme: &str, language: &str) -> Result<()> {
   PrettyPrinter::new()
     .input(Input::from_reader(content))
     .language(language)
-    .header(false)
-    .rule(true)
     .theme(theme)
     .print()
     .map_err(|err| anyhow::anyhow!("Failed to print result: {}", err))?;

@@ -253,7 +253,7 @@ async fn main() -> Result<()> {
                 requests::make_request(
                     &url,
                     &method,
-                    match_headers(matches).unwrap_or_default(),
+                    &match_headers(matches).unwrap_or_default(),
                     &match_queries(matches).unwrap_or_default(),
                     match_body(matches)?,
                     matches.is_present("verbose"),
