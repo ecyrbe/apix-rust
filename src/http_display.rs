@@ -14,7 +14,7 @@ pub fn pretty_print(content: &[u8], theme: &str, language: &str) -> Result<()> {
     .language(language)
     .theme(theme)
     .print()
-    .map_err(|err| anyhow::anyhow!("Failed to print result: {}", err))?;
+    .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
   Ok(())
 }
 

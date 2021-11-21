@@ -5,18 +5,13 @@ use regex::Regex;
 use url::Url;
 
 pub fn validate_url(str_url: &str) -> Result<Url> {
-  let parsed_url = Url::parse(str_url);
-  match parsed_url {
-    Ok(url) => {
-      if !["https", "http"].contains(&url.scheme()) {
-        Err(anyhow::anyhow!(
-          "Apix only supports http(s) protocols for now",
-        ))
-      } else {
-        Ok(url)
-      }
-    }
-    Err(err) => Err(anyhow::anyhow!("{}", err)),
+  let url = Url::parse(str_url)?;
+  if !["https", "http"].contains(&url.scheme()) {
+    Err(anyhow::anyhow!(
+      "Apix only supports http(s) protocols for now",
+    ))
+  } else {
+    Ok(url)
   }
 }
 

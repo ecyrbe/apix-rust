@@ -83,7 +83,8 @@ pub fn match_body(matches: &clap::ArgMatches) -> Result<String> {
   if let Some(body) = matches.value_of("body") {
     Ok(body.to_string())
   } else if let Some(file) = matches.value_of("file") {
-    fs::read_to_string(file).map_err(|err| anyhow::anyhow!("Could not read file {}: {}", file, err))
+    fs::read_to_string(file)
+      .map_err(|err| anyhow::anyhow!("Could not read file '{}': {:#}", file, err))
   } else {
     Ok(String::new())
   }
