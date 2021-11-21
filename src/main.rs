@@ -1,16 +1,16 @@
-mod config;
 mod http_display;
 mod http_utils;
 mod import;
+mod manifests;
 mod match_params;
 mod requests;
 mod validators;
 use anyhow::Result;
 use clap::{crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
-use config::ApixConfig;
 use http_display::pretty_print;
 use lazy_static::lazy_static;
+use manifests::ApixConfiguration;
 use match_params::{match_body, match_headers, match_queries, RequestParam};
 use std::io;
 use std::string::ToString;
@@ -185,7 +185,7 @@ async fn handle_import(url: &str) -> Result<()> {
 async fn main() -> Result<()> {
     let matches = build_cli().get_matches();
     // read config file
-    let mut config = ApixConfig::read_config()?;
+    let mut config = ApixConfiguration::load()?;
     let theme = config.get("theme").unwrap().clone();
     match matches.subcommand() {
         Some(("completions", matches)) => {
@@ -200,7 +200,6 @@ async fn main() -> Result<()> {
             }
             Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
                 (Some(key), Some(value)) => {
-                    config.set(key.to_string(), value.to_string());
                     if let Some(old_value) = config.set(key.to_string(), value.to_string()) {
                         println!("Replaced config key");
                         pretty_print(
@@ -212,7 +211,7 @@ async fn main() -> Result<()> {
                         println!("Set config key");
                         pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
                     }
-                    config.save_config()?;
+                    config.save()?;
                 }
                 _ => {}
             },
@@ -227,7 +226,7 @@ async fn main() -> Result<()> {
                 if let Some(value) = config.delete(key) {
                     println!("Deleted config key");
                     pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
-                    config.save_config()?;
+                    config.save()?;
                 }
             }
             _ => {}
