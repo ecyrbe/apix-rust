@@ -1,5 +1,10 @@
 # APIX
 
+| warning                                                              |
+| -------------------------------------------------------------------- |
+| Apix is still in alpha/proof of concept state! Interface might brake |
+
+
 APIX is a modern API fetcher for the command line.  
 It brings ideas from tools like `Git`,`Kubernetes`, `Curl`, `Httpie`.
 Indeed APIX is not just an API fetcher, it can :
