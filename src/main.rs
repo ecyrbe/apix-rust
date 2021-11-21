@@ -125,20 +125,20 @@ fn build_cli() -> App<'static> {
                 ]),
             App::new("history").about("show history of requests sent (require project)"),
             App::new("get")
-                .about("get an http ressource")
+                .about("get an http resource")
                 .args(build_request_args()),
             App::new("head").args(build_request_args()),
             App::new("post")
-                .about("post to an http ressource")
+                .about("post to an http resource")
                 .args(build_request_args()),
             App::new("delete")
-                .about("delete an http ressource")
+                .about("delete an http resource")
                 .args(build_request_args()),
             App::new("put")
-                .about("put to an http ressource")
+                .about("put to an http resource")
                 .args(build_request_args()),
             App::new("patch")
-                .about("patch an http ressource")
+                .about("patch an http resource")
                 .args(build_request_args()),
             App::new("exec")
                 .about("execute a request from the current API context")
