@@ -14,6 +14,7 @@ use manifests::ApixConfiguration;
 use match_params::{match_body, match_headers, match_queries, RequestParam};
 use std::io;
 use std::string::ToString;
+use std::sync::Mutex;
 use validators::{validate_param, validate_url};
 
 fn print_completions<G: Generator>(gen: G, app: &mut App) {
@@ -248,14 +249,14 @@ async fn handle_import(url: &str) -> Result<()> {
 
 // load configuration as a lazy static varibale
 lazy_static! {
-    static ref CONFIG: ApixConfiguration = ApixConfiguration::load().unwrap();
+    static ref CONFIG: Mutex<ApixConfiguration> = Mutex::new(ApixConfiguration::load().unwrap());
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = build_cli().get_matches();
     // read config file
-    let theme = CONFIG.get("theme").unwrap().clone();
+    let theme = CONFIG.lock().unwrap().get("theme").unwrap().clone();
     match matches.subcommand() {
         Some(("completions", matches)) => {
             if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
@@ -266,14 +267,18 @@ async fn main() -> Result<()> {
         Some(("config", matches)) => match matches.subcommand() {
             Some(("list", _)) => {
                 pretty_print(
-                    serde_yaml::to_string(&CONFIG.clone())?.as_bytes(),
+                    serde_yaml::to_string(&CONFIG.lock().unwrap().clone())?.as_bytes(),
                     &theme,
                     "yaml",
                 )?;
             }
             Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
                 (Some(key), Some(value)) => {
-                    if let Some(old_value) = CONFIG.set(key.to_string(), value.to_string()) {
+                    if let Some(old_value) = CONFIG
+                        .lock()
+                        .unwrap()
+                        .set(key.to_string(), value.to_string())
+                    {
                         println!("Replaced config key");
                         pretty_print(
                             format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
@@ -284,22 +289,22 @@ async fn main() -> Result<()> {
                         println!("Set config key");
                         pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
                     }
-                    CONFIG.save()?;
+                    CONFIG.lock().unwrap().save()?;
                 }
                 _ => {}
             },
             Some(("get", matches)) => {
                 let key = matches.value_of("name").unwrap();
-                if let Some(value) = CONFIG.get(key) {
-                    pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
+                if let Some(value) = CONFIG.lock().unwrap().get(key) {
+                    pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
                 }
             }
             Some(("delete", matches)) => {
                 let key = matches.value_of("name").unwrap();
-                if let Some(value) = CONFIG.delete(key) {
+                if let Some(value) = CONFIG.lock().unwrap().delete(key) {
                     println!("Deleted config key");
-                    pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
-                    CONFIG.save()?;
+                    pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+                    CONFIG.lock().unwrap().save()?;
                 }
             }
             _ => {}
