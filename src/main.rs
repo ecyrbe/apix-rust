@@ -239,11 +239,11 @@ fn build_cli() -> App<'static> {
 }
 
 async fn handle_import(url: &str) -> Result<()> {
-    let open_api = reqwest::get(url).await?.text().await?;
-    let result = import::import_api(open_api, import::OpenApiType::YAML)
-        .await
-        .map_err(|e| anyhow::anyhow!("Invalid Open Api description\n{:#}", e))?;
-    println!("api {}", serde_json::to_string(&result)?);
+    // let open_api = reqwest::get(url).await?.text().await?;
+    // let result = import::import_api(open_api, import::OpenApiType::YAML)
+    //     .await
+    //     .map_err(|e| anyhow::anyhow!("Invalid Open Api description\n{:#}", e))?;
+    // println!("api {}", serde_json::to_string(&result)?);
     Ok(())
 }
 
