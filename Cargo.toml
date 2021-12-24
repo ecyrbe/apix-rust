@@ -25,6 +25,7 @@ async-trait = "0.1.51"
 bat = "0.18.3"
 dirs = "4.0.0"
 whoami = "1.2.1"
+chrono = "0.4.19"
 
 [dev-dependencies]
 test-case = "1.2.1"
