@@ -6,7 +6,7 @@ mod match_params;
 mod requests;
 mod validators;
 use anyhow::Result;
-use clap::{crate_version, App, AppSettings, Arg, ValueHint};
+use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
 use http_display::pretty_print;
 use lazy_static::lazy_static;
@@ -24,52 +24,52 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
     lazy_static! {
         static ref ARGS: [Arg<'static>; 8] = [
             Arg::new("url")
-                .about("url to request, can be a 'Tera' template")
+                .help("url to request, can be a 'Tera' template")
                 .required(true)
                 .validator(validate_url),
             Arg::new("header")
                 .short('H')
                 .long("header")
-                .about("set header name:value to send with request")
+                .help("set header name:value to send with request")
                 .multiple_occurrences(true)
                 .takes_value(true)
                 .validator(|param| validate_param(param, RequestParam::Header)),
             Arg::new("cookie")
                 .short('c')
                 .long("cookie")
-                .about("set cookie name:value to send with request")
+                .help("set cookie name:value to send with request")
                 .multiple_occurrences(true)
                 .takes_value(true)
                 .validator(|param| validate_param(param, RequestParam::Cookie)),
             Arg::new("query")
                 .short('q')
                 .long("query")
-                .about("set query name:value to send with request")
+                .help("set query name:value to send with request")
                 .multiple_occurrences(true)
                 .takes_value(true)
                 .validator(|param| validate_param(param, RequestParam::Query)),
             Arg::new("body")
                 .short('b')
                 .long("body")
-                .about("set body to send with request, can be a 'Tera' template")
+                .help("set body to send with request, can be a 'Tera' template")
                 .takes_value(true)
                 .conflicts_with("file"),
             Arg::new("file")
                 .short('f')
                 .long("file")
-                .about("set body from file to send with request, can be a 'Tera' template")
+                .help("set body from file to send with request, can be a 'Tera' template")
                 .takes_value(true)
                 .conflicts_with("body")
                 .value_hint(ValueHint::FilePath),
             Arg::new("variable")
                 .short('e')
                 .long("env")
-                .about("set variable name:value for 'Tera' template rendering")
+                .help("set variable name:value for 'Tera' template rendering")
                 .multiple_occurrences(true)
                 .takes_value(true)
                 .validator(|param| validate_param(param, RequestParam::Variable)),
             Arg::new("insecure")
-                .about("allow insecure connections when using https")
+                .help("allow insecure connections when using https")
                 .short('i')
                 .long("insecure"),
         ];
@@ -81,8 +81,9 @@ fn build_cli() -> App<'static> {
     App::new("apix")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .version(crate_version!())
+        .author(crate_authors!())
         .args([Arg::new("verbose")
-            .about("print full request and response")
+            .help("print full request and response")
             .short('v')
             .long("verbose")
             .global(true)])
@@ -91,8 +92,8 @@ fn build_cli() -> App<'static> {
                 .about("generate shell completions")
                 .arg(
                     Arg::new("shell")
-                        .about("shell to target for completions")
-                        .possible_values(Shell::arg_values())
+                        .help("shell to target for completions")
+                        .possible_values(Shell::possible_values())
                         .required(true),
                 ),
             App::new("config")
@@ -102,24 +103,24 @@ fn build_cli() -> App<'static> {
                     App::new("list"),
                     App::new("set").about("set configuration value").args([
                         Arg::new("name")
-                            .about("name of configuration value to set")
+                            .help("name of configuration value to set")
                             .required(true)
                             .index(1),
                         Arg::new("value")
-                            .about("value to set configuration value to")
+                            .help("value to set configuration value to")
                             .required(true)
                             .index(2),
                     ]),
                     App::new("get").about("get a configuration value").arg(
                         Arg::new("name")
-                            .about("name of configuration value to get")
+                            .help("name of configuration value to get")
                             .required(true),
                     ),
                     App::new("delete")
                         .about("delete a configuration value")
                         .arg(
                             Arg::new("name")
-                                .about("name of configuration value to delete")
+                                .help("name of configuration value to delete")
                                 .required(true),
                         ),
                 ]),
@@ -148,6 +149,70 @@ fn build_cli() -> App<'static> {
                 .about("apix control interface for handling multiple APIs")
                 .subcommands([
                     App::new("apply").about("apply an apix manifest into current project"),
+                    App::new("create")
+                        .about("create a new apix manifest")
+                        .subcommands([App::new(
+                        "request",
+                    )
+                    .about("create a new request")
+                    .args([
+                        Arg::new("name")
+                            .help("name of request to create")
+                            .required(true)
+                            .index(1),
+                        Arg::new("url")
+                            .help("url to request, can be a 'Tera' template")
+                            .required(true)
+                            .validator(validate_url)
+                            .index(2),
+                        Arg::new("header")
+                            .short('H')
+                            .long("header")
+                            .help("set header name:value to send with request")
+                            .multiple_occurrences(true)
+                            .takes_value(true)
+                            .validator(|param| validate_param(param, RequestParam::Header)),
+                        Arg::new("cookie")
+                            .short('c')
+                            .long("cookie")
+                            .help("set cookie name:value to send with request")
+                            .multiple_occurrences(true)
+                            .takes_value(true)
+                            .validator(|param| validate_param(param, RequestParam::Cookie)),
+                        Arg::new("query")
+                            .short('q')
+                            .long("query")
+                            .help("set query name:value to send with request")
+                            .multiple_occurrences(true)
+                            .takes_value(true)
+                            .validator(|param| validate_param(param, RequestParam::Query)),
+                        Arg::new("body")
+                            .short('b')
+                            .long("body")
+                            .help("set body to send with request, can be a 'Tera' template")
+                            .takes_value(true)
+                            .conflicts_with("file"),
+                        Arg::new("file")
+                            .short('f')
+                            .long("file")
+                            .help(
+                                "set body from file to send with request, can be a 'Tera' template",
+                            )
+                            .takes_value(true)
+                            .conflicts_with("body")
+                            .value_hint(ValueHint::FilePath),
+                        Arg::new("variable")
+                            .short('e')
+                            .long("env")
+                            .help("set variable name:value for 'Tera' template rendering")
+                            .multiple_occurrences(true)
+                            .takes_value(true)
+                            .validator(|param| validate_param(param, RequestParam::Variable)),
+                        Arg::new("insecure")
+                            .help("allow insecure connections when using https")
+                            .short('i')
+                            .long("insecure"),
+                    ])]),
                     App::new("init").about("initialise a new API context"),
                     App::new("switch").about("switch API context"),
                     App::new("edit")
@@ -165,7 +230,7 @@ fn build_cli() -> App<'static> {
                         .about("import an OpenAPI description file in yaml or json")
                         .arg(
                             Arg::new("url")
-                                .about("Filename or URL to openApi description to import")
+                                .help("Filename or URL to openApi description to import")
                                 .required(true),
                         ),
                 ]),
@@ -181,12 +246,16 @@ async fn handle_import(url: &str) -> Result<()> {
     Ok(())
 }
 
+// load configuration as a lazy static varibale
+lazy_static! {
+    static ref CONFIG: ApixConfiguration = ApixConfiguration::load().unwrap();
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = build_cli().get_matches();
     // read config file
-    let mut config = ApixConfiguration::load()?;
-    let theme = config.get("theme").unwrap().clone();
+    let theme = CONFIG.get("theme").unwrap().clone();
     match matches.subcommand() {
         Some(("completions", matches)) => {
             if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
@@ -196,11 +265,15 @@ async fn main() -> Result<()> {
         }
         Some(("config", matches)) => match matches.subcommand() {
             Some(("list", _)) => {
-                pretty_print(serde_yaml::to_string(&config)?.as_bytes(), &theme, "yaml")?;
+                pretty_print(
+                    serde_yaml::to_string(&CONFIG.clone())?.as_bytes(),
+                    &theme,
+                    "yaml",
+                )?;
             }
             Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
                 (Some(key), Some(value)) => {
-                    if let Some(old_value) = config.set(key.to_string(), value.to_string()) {
+                    if let Some(old_value) = CONFIG.set(key.to_string(), value.to_string()) {
                         println!("Replaced config key");
                         pretty_print(
                             format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
@@ -211,22 +284,22 @@ async fn main() -> Result<()> {
                         println!("Set config key");
                         pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
                     }
-                    config.save()?;
+                    CONFIG.save()?;
                 }
                 _ => {}
             },
             Some(("get", matches)) => {
                 let key = matches.value_of("name").unwrap();
-                if let Some(value) = config.get(key) {
+                if let Some(value) = CONFIG.get(key) {
                     pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
                 }
             }
             Some(("delete", matches)) => {
                 let key = matches.value_of("name").unwrap();
-                if let Some(value) = config.delete(key) {
+                if let Some(value) = CONFIG.delete(key) {
                     println!("Deleted config key");
                     pretty_print(format!("{}: {}", key, value).as_bytes(), &theme, "yaml")?;
-                    config.save()?;
+                    CONFIG.save()?;
                 }
             }
             _ => {}
