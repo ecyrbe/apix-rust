@@ -1,0 +1,12 @@
+# example to execute this request:
+# apix exec -f ./examples/request_html.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: test
+kind: Request
+spec:
+  request:
+    method: get
+    url: https://google.com
+    headers:
+      accept: text/html

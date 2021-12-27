@@ -1,0 +1,26 @@
+# example to execute this request:
+# apix exec -f ./examples/request.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: test
+  annotations:
+    apix.io/convert-body-string-to-json: "true"
+kind: Request
+spec:
+  context:
+    todo: 2
+    url: https://jsonplaceholder.typicode.com/todos
+    format: application/xml
+    method: get
+    headers:
+      accept: application/json
+  request:
+    method: "{{method}}"
+    url: "{{url}}/{{ todo }}"
+    headers:
+      accept: "{{ headers.accept }}"
+    body: |-
+      {
+        "test": {{ todo + 1 }},
+        "hello": "world"
+      }
