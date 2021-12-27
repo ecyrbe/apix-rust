@@ -375,6 +375,7 @@ async fn main() -> Result<()> {
                                         body,
                                         &context,
                                     )?;
+                                    // try to parse as json and return original string if it fails
                                     serde_json::from_str(&string_body)
                                         .or::<serde_json::Error>(Ok(Value::String(string_body)))
                                         .ok()
