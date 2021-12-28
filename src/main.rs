@@ -1,3 +1,4 @@
+mod dialog;
 mod http_display;
 mod http_utils;
 mod import;
@@ -9,6 +10,7 @@ mod validators;
 use anyhow::Result;
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
+use dialog::Dialog;
 use http_display::pretty_print;
 use lazy_static::lazy_static;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest};
@@ -338,8 +340,18 @@ async fn main() -> Result<()> {
                 let value: ApixManifest = serde_yaml::from_str(&content)?;
                 match value.kind() {
                     ApixKind::Request(request) => {
+                        let result: Result<
+                            serde_json::Map<String, serde_json::Value>,
+                            anyhow::Error,
+                        > = request
+                            .parameters
+                            .iter()
+                            .map(|parameter| Ok((parameter.name.clone(), parameter.ask()?)))
+                            .collect();
+                        let parameters = Value::Object(result?);
                         let mut engine = Tera::default();
-                        let context = Context::from_serialize(&request.context)?;
+                        let mut context = Context::from_serialize(&request.context)?;
+                        context.insert("parameters", &parameters);
                         let convert_body_string_to_json = value
                             .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
                             .map(|v| bool::from_str(v).unwrap_or(false))

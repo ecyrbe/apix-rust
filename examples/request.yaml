@@ -7,20 +7,25 @@ metadata:
     apix.io/convert-body-string-to-json: "true"
 kind: Request
 spec:
+  parameters:
+    - name: todo
+      required: true
+      schema:
+        type: integer
+    - name: email
+      required: true
+      schema:
+        type: string
+        format: email
   context:
-    todo: 2
     url: https://jsonplaceholder.typicode.com/todos
-    format: application/xml
+  request:
     method: get
+    url: "{{url}}/{{ parameters.todo }}"
     headers:
       accept: application/json
-  request:
-    method: "{{method}}"
-    url: "{{url}}/{{ todo }}"
-    headers:
-      accept: "{{ headers.accept }}"
     body: |-
       {
-        "test": {{ todo + 1 }},
-        "hello": "world"
+        "test": {{ parameters.todo + 1 }},
+        "hello": "{{ parameters.email }}"
       }

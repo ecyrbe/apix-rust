@@ -26,25 +26,34 @@ fn default_schema() -> Option<Value> {
     Some(json!({ "type": "string" }))
 }
 
+fn is_default<T: Default + PartialEq>(t: &T) -> bool {
+    *t == Default::default()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixParameter {
-    name: String,
-    required: bool,
-    description: Option<String>,
+    pub name: String,
+    #[serde(default)]
+    pub required: bool,
+    #[serde(default)]
+    pub password: bool,
+    pub description: Option<String>,
     #[serde(default = "default_schema", skip_serializing_if = "Option::is_none")]
-    schema: Option<Value>,
+    pub schema: Option<Value>,
 }
 
 impl ApixParameter {
     pub fn new(
         name: String,
         required: bool,
+        password: bool,
         description: Option<String>,
         schema: Option<Value>,
     ) -> Self {
         Self {
             name,
             required,
+            password,
             description,
             schema,
         }
@@ -54,9 +63,11 @@ impl ApixParameter {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStep {
     name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
+    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
     context: IndexMap<String, String>,
-    #[serde(rename = "if")]
+    #[serde(default, skip_serializing_if = "Option::is_none", rename = "if")]
     if_: Option<String>,
     request: ApixRequestTemplate,
 }
@@ -93,7 +104,9 @@ pub struct ApixStep {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStory {
     name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     needs: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     description: Option<String>,
     #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
     context: IndexMap<String, IndexMap<String, Value>>,
@@ -104,7 +117,8 @@ pub struct ApixStory {
 pub struct ApixStories {
     #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
     pub definitions: IndexMap<String, Value>,
-    parameters: Option<Vec<ApixParameter>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    parameters: Vec<ApixParameter>,
     stories: Vec<ApixStory>,
 }
 
@@ -114,6 +128,7 @@ pub struct ApixRequestTemplate {
     pub url: String,
     #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
     pub headers: IndexMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub body: Option<Value>,
 }
 

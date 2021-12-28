@@ -1,5 +1,4 @@
 use indexmap::IndexMap;
-use serde::Serialize;
 use serde_json::Value;
 use tera::{Context, Error, Tera};
 

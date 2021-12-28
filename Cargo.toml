@@ -11,9 +11,10 @@ bat = "0.18.3"
 clap = { version = "3.0.0-rc.8", features=["regex", "cargo"] }
 clap_generate = "3.0.0-rc.8"
 chrono = "0.4.19"
+dialoguer = "0.9.0"
 dirs = "4.0.0"
 indexmap = { version = "1.7.0", features=["serde"]}
-json_schema = "1.6.19"
+jsonschema = "0.13.3"
 lazy_static = "1.4.0"
 regex = "1.5.4"
 reqwest = { version="0.11.8", features = ["gzip"] }
