@@ -6,11 +6,17 @@
 
 
 APIX is a modern API fetcher for the command line.  
-It brings ideas from tools like `Git`,`Kubernetes`, `Curl`, `Httpie`.
+  
+It brings ideas from tools like `Git`,`Kubernetes`, `Helm` ,`Curl`, `Httpie`.
 Indeed APIX is not just an API fetcher, it can :
-- use OpenAPI definition files to make api calls easier
-- store your request in file system for later use and versioning when combined with git
+- store your request in file system in a readable format for later use (yaml)
+- allows to version your requests naurally with git
+- uses [Tera](https://tera.netlify.app/) template engine to make your requests (see [examples](/examples))
+- uses [Dialoguer](https://docs.rs/dialoguer/latest/dialoguer/index.html) for interactive prompting you when you forget to supply requests parameters
+
+Coming soon:  
 - handle secrets stored in hashi corp vault
+- import OpenAPI definition files to make api calls easier
 
 ## help
 
