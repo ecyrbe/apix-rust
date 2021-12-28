@@ -34,6 +34,7 @@ where
         Ok(content_type) if content_type.contains("html") => Some("html"),
         Ok(content_type) if content_type.contains("css") => Some("css"),
         Ok(content_type) if content_type.contains("javascript") => Some("js"),
+        Ok(content_type) if content_type.contains("yaml") => Some("yaml"),
         _ => Some("txt"),
       },
       _ => None,

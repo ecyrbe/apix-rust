@@ -7,69 +7,69 @@ use serde_json::{json, Value};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct ApixApi {
-    pub url: String,
-    pub version: String,
-    pub description: Option<String>,
+  pub url: String,
+  pub version: String,
+  pub description: Option<String>,
 }
 
 impl ApixApi {
-    pub fn new(url: String, version: String, description: Option<String>) -> Self {
-        Self {
-            url,
-            version,
-            description,
-        }
+  pub fn new(url: String, version: String, description: Option<String>) -> Self {
+    Self {
+      url,
+      version,
+      description,
     }
+  }
 }
 
 fn default_schema() -> Option<Value> {
-    Some(json!({ "type": "string" }))
+  Some(json!({ "type": "string" }))
 }
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
-    *t == Default::default()
+  *t == Default::default()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixParameter {
-    pub name: String,
-    #[serde(default)]
-    pub required: bool,
-    #[serde(default)]
-    pub password: bool,
-    pub description: Option<String>,
-    #[serde(default = "default_schema", skip_serializing_if = "Option::is_none")]
-    pub schema: Option<Value>,
+  pub name: String,
+  #[serde(default)]
+  pub required: bool,
+  #[serde(default)]
+  pub password: bool,
+  pub description: Option<String>,
+  #[serde(default = "default_schema", skip_serializing_if = "Option::is_none")]
+  pub schema: Option<Value>,
 }
 
 impl ApixParameter {
-    pub fn new(
-        name: String,
-        required: bool,
-        password: bool,
-        description: Option<String>,
-        schema: Option<Value>,
-    ) -> Self {
-        Self {
-            name,
-            required,
-            password,
-            description,
-            schema,
-        }
+  pub fn new(
+    name: String,
+    required: bool,
+    password: bool,
+    description: Option<String>,
+    schema: Option<Value>,
+  ) -> Self {
+    Self {
+      name,
+      required,
+      password,
+      description,
+      schema,
     }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStep {
-    name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    context: IndexMap<String, String>,
-    #[serde(default, skip_serializing_if = "Option::is_none", rename = "if")]
-    if_: Option<String>,
-    request: ApixRequestTemplate,
+  name: String,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  description: Option<String>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  context: IndexMap<String, String>,
+  #[serde(default, skip_serializing_if = "Option::is_none", rename = "if")]
+  if_: Option<String>,
+  request: ApixRequestTemplate,
 }
 
 /**
@@ -103,49 +103,49 @@ pub struct ApixStep {
  */
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStory {
-    name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    needs: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    context: IndexMap<String, IndexMap<String, Value>>,
-    steps: Vec<ApixStep>,
+  name: String,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  needs: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  description: Option<String>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  context: IndexMap<String, IndexMap<String, Value>>,
+  steps: Vec<ApixStep>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStories {
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    pub definitions: IndexMap<String, Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    parameters: Vec<ApixParameter>,
-    stories: Vec<ApixStory>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  pub definitions: IndexMap<String, Value>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  parameters: Vec<ApixParameter>,
+  stories: Vec<ApixStory>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixRequestTemplate {
-    pub method: String,
-    pub url: String,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    pub headers: IndexMap<String, String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<Value>,
+  pub method: String,
+  pub url: String,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  pub headers: IndexMap<String, String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub body: Option<Value>,
 }
 
 impl ApixRequestTemplate {
-    pub fn new(
-        method: String,
-        url: String,
-        headers: IndexMap<String, String>,
-        body: Option<Value>,
-    ) -> Self {
-        Self {
-            method,
-            url,
-            headers,
-            body,
-        }
+  pub fn new(
+    method: String,
+    url: String,
+    headers: IndexMap<String, String>,
+    body: Option<Value>,
+  ) -> Self {
+    Self {
+      method,
+      url,
+      headers,
+      body,
     }
+  }
 }
 
 // exemple of an ApixRequest for a GET request in yaml
@@ -188,182 +188,182 @@ impl ApixRequestTemplate {
 //       }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixRequest {
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    pub definitions: IndexMap<String, Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parameters: Vec<ApixParameter>,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    pub context: IndexMap<String, Value>,
-    pub request: ApixRequestTemplate,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  pub definitions: IndexMap<String, Value>,
+  #[serde(default, skip_serializing_if = "Vec::is_empty")]
+  pub parameters: Vec<ApixParameter>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  pub context: IndexMap<String, Value>,
+  pub request: ApixRequestTemplate,
 }
 
 impl ApixRequest {
-    pub fn new(
-        definitions: IndexMap<String, Value>,
-        parameters: Vec<ApixParameter>,
-        context: IndexMap<String, Value>,
-        request: ApixRequestTemplate,
-    ) -> Self {
-        Self {
-            definitions,
-            parameters,
-            context,
-            request,
-        }
+  pub fn new(
+    definitions: IndexMap<String, Value>,
+    parameters: Vec<ApixParameter>,
+    context: IndexMap<String, Value>,
+    request: ApixRequestTemplate,
+  ) -> Self {
+    Self {
+      definitions,
+      parameters,
+      context,
+      request,
     }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind", content = "spec")]
 pub enum ApixKind {
-    Api(ApixApi),
-    Configuration(ApixConfiguration),
-    Request(ApixRequest),
-    Story(ApixStories),
-    None,
+  Api(ApixApi),
+  Configuration(ApixConfiguration),
+  Request(ApixRequest),
+  Story(ApixStories),
+  None,
 }
 
 impl Default for ApixKind {
-    fn default() -> Self {
-        ApixKind::None
-    }
+  fn default() -> Self {
+    ApixKind::None
+  }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct ApixMetadata {
-    name: String,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    labels: IndexMap<String, String>,
-    #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-    annotations: IndexMap<String, String>,
-    #[serde(flatten)]
-    extensions: IndexMap<String, String>,
+  name: String,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  labels: IndexMap<String, String>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  annotations: IndexMap<String, String>,
+  #[serde(flatten)]
+  extensions: IndexMap<String, String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ApixManifestV1 {
-    metadata: ApixMetadata,
-    #[serde(flatten)]
-    kind: ApixKind,
+  metadata: ApixMetadata,
+  #[serde(flatten)]
+  kind: ApixKind,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "apiVersion")]
 pub enum ApixManifest {
-    #[serde(rename = "apix.io/v1")]
-    V1(ApixManifestV1),
-    None,
+  #[serde(rename = "apix.io/v1")]
+  V1(ApixManifestV1),
+  None,
 }
 
 impl Default for ApixManifest {
-    fn default() -> Self {
-        ApixManifest::None
-    }
+  fn default() -> Self {
+    ApixManifest::None
+  }
 }
 
 impl ApixManifest {
-    pub fn new_api(name: String, api: Option<ApixApi>) -> Self {
-        ApixManifest::V1(ApixManifestV1 {
-            metadata: ApixMetadata {
-                name,
-                labels: indexmap! { "app".to_string() => "apix".to_string()},
-                annotations: indexmap! {
-                    "apix.io/created-by".to_string() => whoami::username(),
-                    "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
-                },
-                extensions: IndexMap::new(),
-            },
-            kind: ApixKind::Api(api.unwrap_or_default()),
-        })
-    }
+  pub fn new_api(name: String, api: Option<ApixApi>) -> Self {
+    ApixManifest::V1(ApixManifestV1 {
+      metadata: ApixMetadata {
+        name,
+        labels: indexmap! { "app".to_string() => "apix".to_string()},
+        annotations: indexmap! {
+            "apix.io/created-by".to_string() => whoami::username(),
+            "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
+        },
+        extensions: IndexMap::new(),
+      },
+      kind: ApixKind::Api(api.unwrap_or_default()),
+    })
+  }
 
-    pub fn new_request(api: String, name: String, request: ApixRequest) -> Self {
-        ApixManifest::V1(ApixManifestV1 {
-            metadata: ApixMetadata {
-                name,
-                labels: indexmap! {
-                    "app".to_string() => "apix".to_string(),
-                    "apix.io/api".to_string() => api,
-                },
-                annotations: indexmap! {
-                    "apix.io/created-by".to_string() => whoami::username(),
-                    "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
-                },
-                extensions: IndexMap::new(),
-            },
-            kind: ApixKind::Request(request),
-        })
-    }
+  pub fn new_request(api: String, name: String, request: ApixRequest) -> Self {
+    ApixManifest::V1(ApixManifestV1 {
+      metadata: ApixMetadata {
+        name,
+        labels: indexmap! {
+            "app".to_string() => "apix".to_string(),
+            "apix.io/api".to_string() => api,
+        },
+        annotations: indexmap! {
+            "apix.io/created-by".to_string() => whoami::username(),
+            "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
+        },
+        extensions: IndexMap::new(),
+      },
+      kind: ApixKind::Request(request),
+    })
+  }
 
-    pub fn new_stories(api: String, name: String, stories: ApixStories) -> Self {
-        ApixManifest::V1(ApixManifestV1 {
-            metadata: ApixMetadata {
-                name,
-                labels: indexmap! {
-                    "app".to_string() => "apix".to_string(),
-                    "apix.io/api".to_string() => api,
-                },
-                annotations: indexmap! {
-                    "apix.io/created-by".to_string() => whoami::username(),
-                    "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
-                },
-                extensions: IndexMap::new(),
-            },
-            kind: ApixKind::Story(stories),
-        })
-    }
+  pub fn new_stories(api: String, name: String, stories: ApixStories) -> Self {
+    ApixManifest::V1(ApixManifestV1 {
+      metadata: ApixMetadata {
+        name,
+        labels: indexmap! {
+            "app".to_string() => "apix".to_string(),
+            "apix.io/api".to_string() => api,
+        },
+        annotations: indexmap! {
+            "apix.io/created-by".to_string() => whoami::username(),
+            "apix.io/created-at".to_string() => chrono::Utc::now().to_rfc3339(),
+        },
+        extensions: IndexMap::new(),
+      },
+      kind: ApixKind::Story(stories),
+    })
+  }
 
-    pub fn name(&self) -> &str {
-        match self {
-            ApixManifest::V1(manifest) => &manifest.metadata.name,
-            ApixManifest::None => "",
-        }
+  pub fn name(&self) -> &str {
+    match self {
+      ApixManifest::V1(manifest) => &manifest.metadata.name,
+      ApixManifest::None => "",
     }
+  }
 
-    #[allow(dead_code)]
-    pub fn version(&self) -> &str {
-        match self {
-            ApixManifest::V1(_) => "apix.io/v1",
-            ApixManifest::None => "",
-        }
+  #[allow(dead_code)]
+  pub fn version(&self) -> &str {
+    match self {
+      ApixManifest::V1(_) => "apix.io/v1",
+      ApixManifest::None => "",
     }
+  }
 
-    pub fn kind(&self) -> &ApixKind {
-        match self {
-            ApixManifest::V1(manifest) => &manifest.kind,
-            ApixManifest::None => &ApixKind::None,
-        }
+  pub fn kind(&self) -> &ApixKind {
+    match self {
+      ApixManifest::V1(manifest) => &manifest.kind,
+      ApixManifest::None => &ApixKind::None,
     }
+  }
 
-    pub fn get_metadata(&self, key: &String) -> Option<&String> {
-        match self {
-            ApixManifest::V1(manifest) => manifest.metadata.extensions.get(key),
-            ApixManifest::None => None,
-        }
+  pub fn get_metadata(&self, key: &String) -> Option<&String> {
+    match self {
+      ApixManifest::V1(manifest) => manifest.metadata.extensions.get(key),
+      ApixManifest::None => None,
     }
+  }
 
-    pub fn insert_metadata(&mut self, key: String, value: String) {
-        match self {
-            ApixManifest::V1(manifest) => {
-                manifest.metadata.extensions.insert(key, value);
-                ()
-            }
-            ApixManifest::None => (),
-        }
+  pub fn insert_metadata(&mut self, key: String, value: String) {
+    match self {
+      ApixManifest::V1(manifest) => {
+        manifest.metadata.extensions.insert(key, value);
+        ()
+      }
+      ApixManifest::None => (),
     }
+  }
 
-    pub fn get_annotation(&self, key: &String) -> Option<&String> {
-        match self {
-            ApixManifest::V1(manifest) => manifest.metadata.annotations.get(key),
-            ApixManifest::None => None,
-        }
+  pub fn get_annotation(&self, key: &String) -> Option<&String> {
+    match self {
+      ApixManifest::V1(manifest) => manifest.metadata.annotations.get(key),
+      ApixManifest::None => None,
     }
+  }
 
-    pub fn get_label(&self, key: &String) -> Option<&String> {
-        match self {
-            ApixManifest::V1(manifest) => manifest.metadata.labels.get(key),
-            ApixManifest::None => None,
-        }
+  pub fn get_label(&self, key: &String) -> Option<&String> {
+    match self {
+      ApixManifest::V1(manifest) => manifest.metadata.labels.get(key),
+      ApixManifest::None => None,
     }
+  }
 }

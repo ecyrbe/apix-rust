@@ -9,4 +9,4 @@ spec:
     method: get
     url: https://raw.githubusercontent.com/ecyrbe/apix-rust/main/examples/request_yaml.yaml
     headers:
-      accept: application/yaml
+      accept: text/x-yaml
