@@ -29,8 +29,15 @@ impl Dialog for ApixParameter {
 
                 Ok(Value::String(input))
             } else {
-                let input = Input::with_theme(&ColorfulTheme::default())
-                    .with_prompt(&self.name)
+                // check if schema has a default value
+                let default = value_schema.as_object().and_then(|obj| obj.get("default"));
+                let theme = ColorfulTheme::default();
+                let mut input = Input::with_theme(&theme);
+                input.with_prompt(&self.name);
+                if let Some(default) = default {
+                    input.default(serde_json::to_string(default)?);
+                }
+                let value = input
                     .validate_with(|input: &String| {
                         let value = input_to_value(input);
                         let result = schema.validate(&value);
@@ -45,7 +52,7 @@ impl Dialog for ApixParameter {
                     })
                     .interact_text()?;
 
-                Ok(input_to_value(&input))
+                Ok(input_to_value(&value))
             }
         } else {
             Ok(Value::Null)

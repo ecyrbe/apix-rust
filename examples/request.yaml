@@ -12,11 +12,21 @@ spec:
       required: true
       schema:
         type: integer
+        default: 1
     - name: email
       required: true
       schema:
         type: string
         format: email
+        default: ecyrbe@gmail.com
+    - name: content
+      required: true
+      schema:
+        type: object
+        default:
+          title: "My todo"
+          description: "My todo description"
+          done: false
   context:
     # you can create new variables in the context
     url: https://jsonplaceholder.typicode.com/todos
@@ -27,16 +37,25 @@ spec:
     # you cannot use variables created in the context
     # error: "{{ next + 1 }}" # variable next is not defined in context itself
   request:
-    method: get
+    method: post
     # you can use variables from the context
-    url: "{{ context.url }}/{{ context.next }}"
+    url: "{{ context.url }}"
     headers:
       accept: application/json
     # you can use variables from the process environnement
+    # you can use variables from the context
+    # you can use variables from the parameters
+    # you can use variables from the introspection
+    # you can use variables from the tera only in scoped content (ie: variable declared in url can't be used in body)
+    # you can use filters to transform the variable
     body: |-
+      {% set my_var = "test" %}
       {
         "user": "{{ env.USERNAME }}",
-        "original": {{ parameters.todo  }},
+        "todo": {{ parameters.todo  }},
+        "next": {{ context.next  }},
         "hello": "{{ parameters.email }}",
-        "annotation": "{{ context.annotation }}"
+        "annotation": "{{ context.annotation }}",
+        "content": {{ parameters.content | json_encode  }},
+        "test": "{{ my_var }}"
       }
