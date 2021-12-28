@@ -1,0 +1,29 @@
+# example to execute this request:
+# apix exec -f ./examples/request_with_env.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: request_with_env
+  annotations:
+    apix.io/convert-body-string-to-json: "true"
+kind: Request
+spec:
+  context:
+    # you can create new variables in the context
+    url: https://jsonplaceholder.typicode.com/users
+    user: USERNAME
+  request:
+    method: post
+    # you can use variables from the context and parameters
+    url: "{{ context.url }}"
+    headers:
+      accept: application/json
+      content-type: application/json
+    # you can use variables from the process environnement with simplified syntax
+    # you can use variables from the process environnement with tera get_env function
+    body: |-
+      {
+        "name": "{{ env.USERNAME }}",
+        "dynamicName": "{{ env[context.user] }}",
+        "functionName": "{{ get_env(name='USERNAME') }}",
+        "dynamicFunctionName": "{{ get_env(name=context.user) }}"
+      }

@@ -2,7 +2,7 @@
 # apix exec -f ./examples/request.yaml
 apiVersion: apix.io/v1
 metadata:
-  name: test
+  name: request
   annotations:
     apix.io/convert-body-string-to-json: "true"
 kind: Request

@@ -1,0 +1,24 @@
+# example to execute this request:
+# apix exec -f ./examples/request_with_params.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: request_with_params
+kind: Request
+spec:
+  parameters:
+    - name: todoId
+      required: true
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+        maximum: 200
+  context:
+    # you can create new variables in the context
+    url: https://jsonplaceholder.typicode.com/todos
+  request:
+    method: get
+    # you can use variables from the context and parameters
+    url: "{{ context.url }}/{{ parameters.todoId }}"
+    headers:
+      accept: application/json

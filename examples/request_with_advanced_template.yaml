@@ -1,0 +1,34 @@
+# example to execute this request:
+# apix exec -f ./examples/request_with_advanced_template.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: request_with_advanced_template
+  annotations:
+    apix.io/convert-body-string-to-json: "true"
+kind: Request
+spec:
+  context:
+    # you can create new variables in the context
+    url: https://jsonplaceholder.typicode.com/users
+    info:
+      email: ecyrbe@gmail.com
+      name: ecyrbe
+      birthday: "01/01/1989"
+  request:
+    method: post
+    # you can use variables from the context and parameters
+    url: "{{ context.url }}"
+    headers:
+      accept: application/json
+      content-type: application/json
+    # you can loop over anything in the context, env, parameters, introspection
+    # you can use if conditions to filter the loop
+    body: |-
+      {
+        {% for name,value in context.info -%}
+        {% if name != 'birthday' -%}
+        "{{ name }}": "{{ value }}",
+        {%- endif %}
+        {%- endfor %}
+        "name": "{{ env.USERNAME }}"
+      }
