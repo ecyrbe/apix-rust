@@ -2,7 +2,7 @@
 # apix exec -f ./examples/request_html.yaml
 apiVersion: apix.io/v1
 metadata:
-  name: test
+  name: request_html
 kind: Request
 spec:
   request:

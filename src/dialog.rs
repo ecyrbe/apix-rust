@@ -5,6 +5,7 @@ use jsonschema::{Draft, JSONSchema};
 use serde_json::Value;
 
 fn input_to_value(input: &String) -> Value {
+    // safe to unwrap because we always return an Ok value
     return serde_json::from_str(&input)
         .or::<serde_json::Error>(Ok(Value::String(input.clone())))
         .unwrap();

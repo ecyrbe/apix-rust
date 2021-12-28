@@ -1,0 +1,12 @@
+# example to execute this request:
+# apix exec -f ./examples/request_yaml.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: request_yaml
+kind: Request
+spec:
+  request:
+    method: get
+    url: https://raw.githubusercontent.com/ecyrbe/apix-rust/main/examples/request_yaml.yaml
+    headers:
+      accept: application/yaml
