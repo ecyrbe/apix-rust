@@ -17,10 +17,10 @@ use manifests::{ApixConfiguration, ApixKind, ApixManifest};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Value;
-use std::io;
 use std::str::FromStr;
 use std::string::ToString;
 use std::sync::Mutex;
+use std::{collections::HashMap, io};
 use template::{MapTemplate, StringTemplate, ValueTemplate};
 use tera::{Context, Tera};
 use validators::{validate_param, validate_url};
@@ -340,7 +340,7 @@ async fn main() -> Result<()> {
                 let value: ApixManifest = serde_yaml::from_str(&content)?;
                 match value.kind() {
                     ApixKind::Request(request) => {
-                        let result: Result<
+                        let parameter_inputs: Result<
                             serde_json::Map<String, serde_json::Value>,
                             anyhow::Error,
                         > = request
@@ -348,10 +348,12 @@ async fn main() -> Result<()> {
                             .iter()
                             .map(|parameter| Ok((parameter.name.clone(), parameter.ask()?)))
                             .collect();
-                        let parameters = Value::Object(result?);
+                        let env: HashMap<String, String> = std::env::vars().collect();
+                        let parameters = Value::Object(parameter_inputs?);
                         let mut engine = Tera::default();
                         let mut context = Context::from_serialize(&request.context)?;
                         context.insert("parameters", &parameters);
+                        context.insert("env", &env);
                         let convert_body_string_to_json = value
                             .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
                             .map(|v| bool::from_str(v).unwrap_or(false))

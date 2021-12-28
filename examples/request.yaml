@@ -27,5 +27,6 @@ spec:
     body: |-
       {
         "test": {{ parameters.todo + 1 }},
-        "hello": "{{ parameters.email }}"
+        "hello": "{{ parameters.email }}",
+        "user": "{{ env.USERNAME }}"
       }
