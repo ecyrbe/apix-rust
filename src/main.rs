@@ -337,8 +337,8 @@ async fn main() -> Result<()> {
         Some(("exec", matches)) => {
             if let Some(file) = matches.value_of("file") {
                 let content = std::fs::read_to_string(file)?;
-                let value: ApixManifest = serde_yaml::from_str(&content)?;
-                match value.kind() {
+                let manifest: ApixManifest = serde_yaml::from_str(&content)?;
+                match manifest.kind() {
                     ApixKind::Request(request) => {
                         let parameter_inputs: Result<
                             serde_json::Map<String, serde_json::Value>,
@@ -351,10 +351,22 @@ async fn main() -> Result<()> {
                         let env: HashMap<String, String> = std::env::vars().collect();
                         let parameters = Value::Object(parameter_inputs?);
                         let mut engine = Tera::default();
-                        let mut context = Context::from_serialize(&request.context)?;
+                        let mut context = Context::new();
+                        context.insert("manifest", &manifest);
                         context.insert("parameters", &parameters);
                         context.insert("env", &env);
-                        let convert_body_string_to_json = value
+                        context.insert(
+                            "context",
+                            &engine.render_value(
+                                &format!("{}#/context", file),
+                                &Value::Object(serde_json::Map::from_iter(
+                                    request.context.clone().into_iter(),
+                                )),
+                                &context,
+                            )?,
+                        );
+
+                        let convert_body_string_to_json = manifest
                             .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
                             .map(|v| bool::from_str(v).unwrap_or(false))
                             .unwrap_or(false);

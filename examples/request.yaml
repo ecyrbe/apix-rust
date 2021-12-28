@@ -18,15 +18,25 @@ spec:
         type: string
         format: email
   context:
+    # you can create new variables in the context
     url: https://jsonplaceholder.typicode.com/todos
+    # you can use variables from parameters in the context
+    next: "{{ parameters.todo + 1 }}"
+    # you can use variables from introspection in the context
+    annotation: '{{ manifest.metadata.annotations["apix.io/convert-body-string-to-json"] }}'
+    # you cannot use variables created in the context
+    # error: "{{ next + 1 }}" # variable next is not defined in context itself
   request:
     method: get
-    url: "{{url}}/{{ parameters.todo }}"
+    # you can use variables from the context
+    url: "{{ context.url }}/{{ context.next }}"
     headers:
       accept: application/json
+    # you can use variables from the process environnement
     body: |-
       {
-        "test": {{ parameters.todo + 1 }},
+        "user": "{{ env.USERNAME }}",
+        "original": {{ parameters.todo  }},
         "hello": "{{ parameters.email }}",
-        "user": "{{ env.USERNAME }}"
+        "annotation": "{{ context.annotation }}"
       }
