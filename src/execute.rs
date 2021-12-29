@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use tera::{Context, Tera};
 
-struct ExecutableRequest<'a> {
+struct RequestTemplate<'a> {
   request: &'a ApixRequest,
   engine: Tera,
   context: Context,
@@ -38,25 +38,19 @@ fn ask_for_required_parameters(
     .collect()
 }
 
-impl<'a> ExecutableRequest<'a> {
+impl<'a> RequestTemplate<'a> {
   fn new(manifest: &'a ApixManifest, file: String) -> Result<Self> {
     match manifest.kind() {
       ApixKind::Request(request) => {
         let parameters = Value::Object(ask_for_required_parameters(&request)?);
         let env: HashMap<String, String> = std::env::vars().collect();
-        let mut engine = Tera::default();
+        let engine = Tera::default();
         let mut context = Context::new();
+
         context.insert("manifest", &manifest);
         context.insert("parameters", &parameters);
         context.insert("env", &env);
-        context.insert(
-          "context",
-          &engine.render_value(
-            &format!("{}#/context", file),
-            &Value::Object(serde_json::Map::from_iter(request.context.clone().into_iter())),
-            &context,
-          )?,
-        );
+
         let convert_body_to_json = manifest
           .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
           .map(|v| bool::from_str(v).unwrap_or(false))
@@ -72,6 +66,16 @@ impl<'a> ExecutableRequest<'a> {
       }
       _ => Err(anyhow::anyhow!("Request manifest expected")),
     }
+  }
+
+  fn render_context(&mut self) -> Result<&mut Self> {
+    let rendered_context = self.engine.render_value(
+      &format!("{}#/context", self.file),
+      &Value::Object(serde_json::Map::from_iter(self.request.context.clone().into_iter())),
+      &self.context,
+    )?;
+    self.context.insert("context", &rendered_context);
+    Ok(self)
   }
 
   fn render_url(&mut self) -> Result<String> {
@@ -132,7 +136,7 @@ impl<'a> ExecutableRequest<'a> {
     }
   }
 
-  fn render_template(&mut self) -> Result<RequestParams> {
+  fn render_request_params(&mut self) -> Result<RequestParams> {
     let url = self.render_url()?;
     let method = self.render_method()?;
     let headers = self.render_headers()?;
@@ -150,8 +154,9 @@ impl<'a> ExecutableRequest<'a> {
 }
 
 pub async fn handle_execute(file: &str, manifest: &ApixManifest, theme: &str, verbose: bool) -> Result<()> {
-  let mut request = ExecutableRequest::new(manifest, file.to_string())?;
-  let params = request.render_template()?;
+  let params = RequestTemplate::new(manifest, file.to_string())?
+    .render_context()?
+    .render_request_params()?;
   requests::make_request(
     &params.url,
     &params.method,
