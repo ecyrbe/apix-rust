@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="512"
-   height="512"
-   viewBox="0 0 512 512"
+   width="136mm"
+   height="50mm"
+   viewBox="0 0 514.0157 188.97636"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
@@ -24,14 +24,15 @@
      inkscape:document-units="px"
      showgrid="false"
      inkscape:zoom="1.4199219"
-     inkscape:cx="255.64787"
-     inkscape:cy="256"
+     inkscape:cx="341.56809"
+     inkscape:cy="181.34801"
      inkscape:window-width="1920"
      inkscape:window-height="1018"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     units="mm" />
   <defs
      id="defs2" />
   <g
@@ -43,8 +44,8 @@
        id="rect31"
        width="135.76067"
        height="131.7579"
-       x="-171.52052"
-       y="162.36969"
+       x="-72.014946"
+       y="69.662384"
        transform="rotate(-47.025762)" />
     <text
        xml:space="preserve"
@@ -52,17 +53,17 @@
        x="50.239342"
        y="86.965614"
        id="text4305"
-       transform="matrix(3.1691128,0,0,3.0111858,-106.86368,9.668208)"><tspan
+       transform="matrix(3.1691128,0,0,3.0111858,-106.86368,-126.33179)"><tspan
          x="50.239342"
          y="86.965614"
-         id="tspan29680">A</tspan></text>
+         id="tspan29704">A</tspan></text>
     <rect
        style="fill:#33d17a"
        id="rect31-7"
        width="135.76067"
        height="131.7579"
-       x="-90.804581"
-       y="251.30028"
+       x="9.3661747"
+       y="159.31206"
        transform="rotate(-47.438349)" />
     <text
        xml:space="preserve"
@@ -70,17 +71,17 @@
        x="50.239342"
        y="86.965614"
        id="text4305-1"
-       transform="matrix(3.1691128,0,0,3.0111858,28.6387,11.443775)"><tspan
+       transform="matrix(3.1691128,0,0,3.0111858,28.6387,-124.55622)"><tspan
          x="50.239342"
          y="86.965614"
-         id="tspan29682">P</tspan></text>
+         id="tspan29706">P</tspan></text>
     <rect
        style="fill:#ffa348"
        id="rect31-7-6"
        width="135.76067"
        height="131.7579"
-       x="-21.196842"
-       y="329.43063"
+       x="79.42128"
+       y="237.93134"
        transform="rotate(-47.717726)" />
     <text
        xml:space="preserve"
@@ -88,17 +89,17 @@
        x="50.239342"
        y="86.965614"
        id="text4305-1-4"
-       transform="matrix(3.1691128,0,0,3.0111858,151.8079,12.447895)"><tspan
+       transform="matrix(3.1691128,0,0,3.0111858,151.8079,-123.5521)"><tspan
          x="50.239342"
          y="86.965614"
-         id="tspan29684">I</tspan></text>
+         id="tspan29708">I</tspan></text>
     <rect
        style="fill:#ed333b"
        id="rect31-7-6-0"
        width="135.76067"
        height="131.7579"
-       x="43.111343"
-       y="400.30624"
+       x="143.75272"
+       y="308.83371"
        transform="rotate(-47.732232)" />
     <text
        xml:space="preserve"
@@ -106,9 +107,9 @@
        x="50.239342"
        y="86.965614"
        id="text4305-1-4-3"
-       transform="matrix(3.1691128,0,0,3.0111858,216.16002,11.443778)"><tspan
+       transform="matrix(3.1691128,0,0,3.0111858,216.16002,-124.55622)"><tspan
          x="50.239342"
          y="86.965614"
-         id="tspan29686">X</tspan></text>
+         id="tspan29710">X</tspan></text>
   </g>
 </svg>
