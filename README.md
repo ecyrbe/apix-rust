@@ -9,11 +9,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/languages/code-size/ecyrbe/apix-rust" alt="code size">
-  <a href="https://github.com/ecyrbe/apix-rust/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/ecyrbe/apix-rust?color=blue" alt="MIT license">
-  </a>
+  <img src="https://img.shields.io/badge/rust-2021-3584e4?logo=rust" alt="langue rust">
   <img src="https://img.shields.io/github/workflow/status/ecyrbe/apix-rust/Rust/main" alt="build status">
+  <img src="https://img.shields.io/github/languages/code-size/ecyrbe/apix-rust?color=ffa348"& alt="code size">
+  <a href="https://github.com/ecyrbe/apix-rust/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/ecyrbe/apix-rust?color=ed333b" alt="MIT license">
+  </a>
 </p>
 
 ```diff
