@@ -67,7 +67,7 @@ impl ApixConfiguration {
   // private method to set default values for apix configuration
   fn set_defaults(&mut self) {
     if let None = self.get("theme") {
-      self.set("theme".to_string(), "Coldark-Dark".to_string());
+      self.set("theme".to_string(), "Monokai Extended".to_string());
     }
   }
 
@@ -128,7 +128,7 @@ mod tests {
   #[test]
   fn test_default_config() {
     let config = ApixConfiguration::default();
-    assert_eq!(config.get("theme").unwrap(), "Coldark-Dark");
+    assert_eq!(config.get("theme").unwrap(), "Monokai Extended");
   }
   // test ApixConfig default deserialize
   #[test]
@@ -144,7 +144,7 @@ mod tests {
         rust: "rust"
     "#;
     let config = ApixConfiguration::load_from_string(config, ERROR_MSG).unwrap();
-    assert_eq!(config.get("theme").unwrap(), "Coldark-Dark");
+    assert_eq!(config.get("theme").unwrap(), "Monokai Extended");
     assert_eq!(config.get("rust").unwrap(), "rust");
   }
   // test ApixConfig deserialize
