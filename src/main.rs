@@ -332,7 +332,7 @@ async fn main() -> Result<()> {
       if let Some(file) = matches.value_of("file") {
         let content = std::fs::read_to_string(file)?;
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
-        handle_execute(file, manifest, &theme, matches.is_present("verbose")).await?;
+        handle_execute(file, &manifest, &theme, matches.is_present("verbose")).await?;
       }
     }
     Some(("ctl", matches)) => match matches.subcommand() {

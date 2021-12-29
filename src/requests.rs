@@ -61,8 +61,12 @@ pub async fn make_request(
     println!("");
   }
   let language = result.get_language();
-  let body = result.text().await?;
-  pretty_print(body.as_bytes(), &theme, language.unwrap_or_default())?;
+  let response_body = result.text().await?;
+  pretty_print(
+    response_body.as_bytes(),
+    &theme,
+    language.unwrap_or_default(),
+  )?;
   println!("");
   Ok(())
 }
