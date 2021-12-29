@@ -1,14 +1,24 @@
-# APIX
+<p align="center">
+  <a href="https://github.com/ecyrbe/apix-rust">
+    <img align="center" src="https://raw.githubusercontent.com/ecyrbe/apix-rust/main/docs/logo.svg" width="512px" alt="Apix logo">
+  </a>
+</p>
 
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ecyrbe/apix-rust)
-[![GitHub license](https://img.shields.io/github/license/ecyrbe/apix-rust?color=blue)](https://github.com/ecyrbe/apix-rust/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/ecyrbe/apix-rust)](https://github.com/ecyrbe/apix-rust/issues)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ecyrbe/apix-rust/Rust/main)
+<p align="center">
+   APIX is a modern API fetcher for the command line.
+</p>
 
-| warning                                                              |
-| -------------------------------------------------------------------- |
-| Apix is still in alpha/proof of concept state! Interface might brake |
+<p align="center">
+  <img src="https://img.shields.io/github/languages/code-size/ecyrbe/apix-rust" alt="code size">
+  <a href="https://github.com/ecyrbe/apix-rust/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/ecyrbe/apix-rust?color=blue" alt="MIT license">
+  </a>
+  <img src="https://img.shields.io/github/workflow/status/ecyrbe/apix-rust/Rust/main" alt="build status">
+</p>
 
+```diff
+- WARNING: Apix is still in alpha/proof of concept state! Interface might brake -
+```
 
 APIX is a modern API fetcher for the command line.  
   
