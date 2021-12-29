@@ -1,4 +1,5 @@
 mod dialog;
+mod execute;
 mod http_display;
 mod http_utils;
 mod import;
@@ -10,19 +11,14 @@ mod validators;
 use anyhow::Result;
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
-use dialog::Dialog;
+use execute::handle_execute;
 use http_display::pretty_print;
 use lazy_static::lazy_static;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use serde_json::Value;
-use std::str::FromStr;
+use std::io;
 use std::string::ToString;
 use std::sync::Mutex;
-use std::{collections::HashMap, io};
-use template::{MapTemplate, StringTemplate, ValueTemplate};
-use tera::{Context, Tera};
 use validators::{validate_param, validate_url};
 
 fn print_completions<G: Generator>(gen: G, app: &mut App) {
@@ -236,7 +232,7 @@ fn build_cli() -> App<'static> {
           App::new("create")
             .about("create a new apix manifest")
             .subcommands([App::new("request")
-              .about("create a new request")
+                .about("create a new request")
               .args(build_create_request_args())]),
           App::new("init").about("initialise a new API context"),
           App::new("switch").about("switch API context"),
@@ -336,88 +332,7 @@ async fn main() -> Result<()> {
       if let Some(file) = matches.value_of("file") {
         let content = std::fs::read_to_string(file)?;
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
-        match manifest.kind() {
-          ApixKind::Request(request) => {
-            let parameter_inputs: Result<
-              serde_json::Map<String, serde_json::Value>,
-              anyhow::Error,
-            > = request
-              .parameters
-              .iter()
-              .map(|parameter| Ok((parameter.name.clone(), parameter.ask()?)))
-              .collect();
-            let env: HashMap<String, String> = std::env::vars().collect();
-            let parameters = Value::Object(parameter_inputs?);
-            let mut engine = Tera::default();
-            let mut context = Context::new();
-            context.insert("manifest", &manifest);
-            context.insert("parameters", &parameters);
-            context.insert("env", &env);
-            context.insert(
-              "context",
-              &engine.render_value(
-                &format!("{}#/context", file),
-                &Value::Object(serde_json::Map::from_iter(
-                  request.context.clone().into_iter(),
-                )),
-                &context,
-              )?,
-            );
-
-            let convert_body_string_to_json = manifest
-              .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
-              .map(|v| bool::from_str(v).unwrap_or(false))
-              .unwrap_or(false);
-
-            engine.add_raw_template(&format!("{}#/url", file), &request.request.url)?;
-            engine.add_raw_template(&format!("{}#/method", file), &request.request.method)?;
-            let url = &engine.render(&format!("{}#/url", file), &context)?;
-            let method = &engine.render(&format!("{}#/method", file), &context)?;
-            let headers = &HeaderMap::from_iter(
-              engine
-                .render_map(
-                  &format!("{}#/headers", file),
-                  &request.request.headers,
-                  &context,
-                )?
-                .iter()
-                .map(|(key, value)| {
-                  (
-                    HeaderName::from_str(key).unwrap(),
-                    HeaderValue::from_str(value).unwrap(),
-                  )
-                }),
-            );
-            let body = match (request.request.body.as_ref(), convert_body_string_to_json) {
-              (Some(Value::String(body)), true) => {
-                let string_body =
-                  engine.render_string(&format!("{}#/body", file), body, &context)?;
-                // try to parse as json and return original string if it fails
-                serde_json::from_str(&string_body)
-                  .or::<serde_json::Error>(Ok(Value::String(string_body)))
-                  .ok()
-              }
-              (Some(body), _) => {
-                Some(engine.render_value(&format!("{}#/body", file), body, &context)?)
-              }
-              (None, _) => None,
-            };
-            requests::make_request(
-              url,
-              method,
-              Some(headers),
-              None,
-              match body {
-                Some(body) => Some(serde_json::to_string(&body)?),
-                None => None,
-              },
-              matches.is_present("verbose"),
-              &theme,
-            )
-            .await?
-          }
-          _ => todo!(),
-        }
+        handle_execute(file, manifest, &theme, matches.is_present("verbose")).await?;
       }
     }
     Some(("ctl", matches)) => match matches.subcommand() {

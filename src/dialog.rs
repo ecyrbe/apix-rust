@@ -22,41 +22,37 @@ impl Dialog for ApixParameter {
       .with_draft(Draft::Draft7)
       .compile(value_schema)
       .map_err(|err| anyhow::anyhow!("{}", err))?;
-    if self.required {
-      if self.password {
-        let input = Password::with_theme(&ColorfulTheme::default())
-          .with_prompt(&self.name)
-          .interact()?;
+    if self.password {
+      let input = Password::with_theme(&ColorfulTheme::default())
+        .with_prompt(&self.name)
+        .interact()?;
 
-        Ok(Value::String(input))
-      } else {
-        // check if schema has a default value
-        let default = value_schema.as_object().and_then(|obj| obj.get("default"));
-        let theme = ColorfulTheme::default();
-        let mut input = Input::with_theme(&theme);
-        input.with_prompt(&self.name);
-        if let Some(default) = default {
-          input.default(serde_json::to_string(default)?);
-        }
-        let value = input
-          .validate_with(|input: &String| {
-            let value = input_to_value(input);
-            let result = schema.validate(&value);
-            if let Err(errors) = result {
-              let mut msg: Vec<String> = vec!["Invalid input:".to_string()];
-              for (index, cause) in errors.enumerate() {
-                msg.push(format!("cause {}: {}", index, cause));
-              }
-              return Err(msg.join("\n"));
-            }
-            Ok(())
-          })
-          .interact_text()?;
-
-        Ok(input_to_value(&value))
-      }
+      Ok(Value::String(input))
     } else {
-      Ok(Value::Null)
+      // check if schema has a default value
+      let default = value_schema.as_object().and_then(|obj| obj.get("default"));
+      let theme = ColorfulTheme::default();
+      let mut input = Input::with_theme(&theme);
+      input.with_prompt(&self.name);
+      if let Some(default) = default {
+        input.default(serde_json::to_string(default)?);
+      }
+      let value = input
+        .validate_with(|input: &String| {
+          let value = input_to_value(input);
+          let result = schema.validate(&value);
+          if let Err(errors) = result {
+            let mut msg: Vec<String> = vec!["Invalid input:".to_string()];
+            for (index, cause) in errors.enumerate() {
+              msg.push(format!("cause {}: {}", index, cause));
+            }
+            return Err(msg.join("\n"));
+          }
+          Ok(())
+        })
+        .interact_text()?;
+
+      Ok(input_to_value(&value))
     }
   }
 }
