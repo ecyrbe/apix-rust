@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-   APIX is a modern API fetcher for the command line.
+   APIX is a modern HTTP client for the command line.
 </p>
 
 <p align="center">
@@ -21,18 +21,20 @@
 - WARNING: Apix is still in alpha/proof of concept state! Interface might brake -
 ```
 
-APIX is a modern API fetcher for the command line.  
-  
-It brings ideas from tools like `Git`,`Kubernetes`, `Helm` ,`Curl`, `Httpie`.
-Indeed APIX is not just an API fetcher, it can :
-- store your request in file system in a readable format for later use (yaml)
-- allows to version your requests naurally with git
-- uses [Tera](https://tera.netlify.app/) template engine to make your requests (see [examples](/examples))
-- uses [Dialoguer](https://docs.rs/dialoguer/latest/dialoguer/index.html) for interactive prompting you when you forget to supply requests parameters
+Apix brings ideas from tools like `Git`,`Kubernetes`, `Helm` ,`Httpie`.
+Indeed it's is not just a simple HTTP client, Apix is :  
+- **Beautifull** as it uses [Bat](https://github.com/sharkdp/bat) to pretty print requests and responses
+- **Powerfull** as it uses [Tera](https://tera.netlify.app/) template engine to allow your requests to do complex things if you want them to (see [examples](/examples))
+- **Friendly** to use as it uses [Dialoguer](https://docs.rs/dialoguer/latest/dialoguer/index.html) for interactive prompt to guide you when creating requests or executing them
+- **Easy** to use in the command line as it uses [Clap](https://docs.rs/clap/latest/clap/) autocompletion
+- **Reusable** as it stores your requests in your file system in a readable format for later use (yaml)
+- **Helping you not forget** as it stores the response of the requests so you can consult them at any time
+- **Helping you test APIs** as it allows you to create request stories (chain requests, use results of a request to make another one)
+- **Team player** as it allows you to naturally share your request collections with git
 
 Coming soon:  
-- handle secrets stored in hashi corp vault
-- import OpenAPI definition files to make api calls easier
+- **Secure** as it handles secrets stored in hashi corp vault
+- **Enterprise friend** as it allows you to import OpenAPI definition files into apix requests files
 
 ## help
 
