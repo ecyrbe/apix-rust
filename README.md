@@ -1,5 +1,10 @@
 # APIX
 
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ecyrbe/apix-rust)
+[![GitHub license](https://img.shields.io/github/license/ecyrbe/apix-rust?color=blue)](https://github.com/ecyrbe/apix-rust/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/ecyrbe/apix-rust)](https://github.com/ecyrbe/apix-rust/issues)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/ecyrbe/apix-rust/Rust/main)
+
 | warning                                                              |
 | -------------------------------------------------------------------- |
 | Apix is still in alpha/proof of concept state! Interface might brake |
