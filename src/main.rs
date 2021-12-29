@@ -168,14 +168,12 @@ fn build_cli() -> App<'static> {
       .long("verbose")
       .global(true)])
     .subcommands([
-      App::new("completions")
-        .about("generate shell completions")
-        .arg(
-          Arg::new("shell")
-            .help("shell to target for completions")
-            .possible_values(Shell::possible_values())
-            .required(true),
-        ),
+      App::new("completions").about("generate shell completions").arg(
+        Arg::new("shell")
+          .help("shell to target for completions")
+          .possible_values(Shell::possible_values())
+          .required(true),
+      ),
       App::new("config")
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .about("configuration settings")
@@ -196,18 +194,14 @@ fn build_cli() -> App<'static> {
               .help("name of configuration value to get")
               .required(true),
           ),
-          App::new("delete")
-            .about("delete a configuration value")
-            .arg(
-              Arg::new("name")
-                .help("name of configuration value to delete")
-                .required(true),
-            ),
+          App::new("delete").about("delete a configuration value").arg(
+            Arg::new("name")
+              .help("name of configuration value to delete")
+              .required(true),
+          ),
         ]),
       App::new("history").about("show history of requests sent (require project)"),
-      App::new("get")
-        .about("get an http resource")
-        .args(build_request_args()),
+      App::new("get").about("get an http resource").args(build_request_args()),
       App::new("head").args(build_request_args()),
       App::new("post")
         .about("post to an http resource")
@@ -232,16 +226,14 @@ fn build_cli() -> App<'static> {
           App::new("create")
             .about("create a new apix manifest")
             .subcommands([App::new("request")
-                .about("create a new request")
+              .about("create a new request")
               .args(build_create_request_args())]),
           App::new("init").about("initialise a new API context"),
           App::new("switch").about("switch API context"),
           App::new("edit").about("edit an existing apix resource with current terminal EDITOR"),
           App::new("get")
             .about("get information about an apix resource")
-            .arg(
-              Arg::new("resource").possible_values(["resource", "context", "request", "session"]),
-            ),
+            .arg(Arg::new("resource").possible_values(["resource", "context", "request", "session"])),
           App::new("delete")
             .about("delete an existing named resource")
             .args([Arg::new("resource"), Arg::new("name")]),
@@ -292,11 +284,7 @@ async fn main() -> Result<()> {
       }
       Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
         (Some(key), Some(value)) => {
-          if let Some(old_value) = CONFIG
-            .lock()
-            .unwrap()
-            .set(key.to_string(), value.to_string())
-          {
+          if let Some(old_value) = CONFIG.lock().unwrap().set(key.to_string(), value.to_string()) {
             println!("Replaced config key");
             pretty_print(
               format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),

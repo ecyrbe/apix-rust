@@ -70,10 +70,9 @@ mod test_get_language {
     }
 
     fn set_content_type(&mut self, value: &str) {
-      self.headers.insert(
-        CONTENT_TYPE,
-        reqwest::header::HeaderValue::from_str(value).unwrap(),
-      );
+      self
+        .headers
+        .insert(CONTENT_TYPE, reqwest::header::HeaderValue::from_str(value).unwrap());
     }
 
     fn from_content_type(value: &str) -> MockHttpHeaders {
@@ -91,8 +90,6 @@ mod test_get_language {
   #[test_case("text/javascript" => "js")]
   #[test_case("text/plain" => "txt")]
   fn test_get_language(content_type: &str) -> &str {
-    MockHttpHeaders::from_content_type(content_type)
-      .get_language()
-      .unwrap()
+    MockHttpHeaders::from_content_type(content_type).get_language().unwrap()
   }
 }

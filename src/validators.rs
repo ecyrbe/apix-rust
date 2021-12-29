@@ -7,9 +7,7 @@ use url::Url;
 pub fn validate_url(str_url: &str) -> Result<Url> {
   let url = Url::parse(str_url)?;
   if !["https", "http"].contains(&url.scheme()) {
-    Err(anyhow::anyhow!(
-      "Apix only supports http(s) protocols for now",
-    ))
+    Err(anyhow::anyhow!("Apix only supports http(s) protocols for now",))
   } else {
     Ok(url)
   }

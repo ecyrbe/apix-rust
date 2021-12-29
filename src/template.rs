@@ -64,21 +64,11 @@ impl MapTemplate for Tera {
 }
 
 pub trait StringTemplate {
-  fn render_string(
-    &mut self,
-    name: &str,
-    content: &str,
-    context: &Context,
-  ) -> Result<String, Error>;
+  fn render_string(&mut self, name: &str, content: &str, context: &Context) -> Result<String, Error>;
 }
 
 impl StringTemplate for Tera {
-  fn render_string(
-    &mut self,
-    name: &str,
-    content: &str,
-    context: &Context,
-  ) -> Result<String, Error> {
+  fn render_string(&mut self, name: &str, content: &str, context: &Context) -> Result<String, Error> {
     self.add_raw_template(name, content)?;
     self.render(name, context)
   }

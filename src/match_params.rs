@@ -50,18 +50,13 @@ impl FromStr for QueryTuple {
       "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
       query_string
     ))?;
-    Ok(QueryTuple(
-      header_split[1].to_string(),
-      header_split[2].to_string(),
-    ))
+    Ok(QueryTuple(header_split[1].to_string(), header_split[2].to_string()))
   }
 }
 
 pub fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::HeaderMap> {
   if let Ok(header_tuples) = matches.values_of_t::<HeaderTuple>("header") {
-    let headers = header_tuples
-      .iter()
-      .map(|tuple| (tuple.0.clone(), tuple.1.clone()));
+    let headers = header_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
     Some(HeaderMap::from_iter(headers))
   } else {
     None
@@ -70,9 +65,7 @@ pub fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::Head
 
 pub fn match_queries(matches: &clap::ArgMatches) -> Option<HashMap<String, String>> {
   if let Ok(query_tuples) = matches.values_of_t::<QueryTuple>("query") {
-    let queries = query_tuples
-      .iter()
-      .map(|tuple| (tuple.0.clone(), tuple.1.clone()));
+    let queries = query_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
     Some(HashMap::from_iter(queries))
   } else {
     None
@@ -83,8 +76,7 @@ pub fn match_body(matches: &clap::ArgMatches) -> Result<String> {
   if let Some(body) = matches.value_of("body") {
     Ok(body.to_string())
   } else if let Some(file) = matches.value_of("file") {
-    fs::read_to_string(file)
-      .map_err(|err| anyhow::anyhow!("Could not read file '{}': {:#}", file, err))
+    fs::read_to_string(file).map_err(|err| anyhow::anyhow!("Could not read file '{}': {:#}", file, err))
   } else {
     Ok(String::new())
   }
@@ -104,10 +96,7 @@ mod tests {
     let headers = match_headers(&matches);
     assert!(headers.is_some());
     let headers = headers.unwrap();
-    assert_eq!(
-      headers.get("foo"),
-      Some(&"bar".parse::<HeaderValue>().unwrap())
-    );
+    assert_eq!(headers.get("foo"), Some(&"bar".parse::<HeaderValue>().unwrap()));
   }
 
   // test match queries

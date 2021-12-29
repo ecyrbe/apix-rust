@@ -43,13 +43,7 @@ pub struct ApixParameter {
 }
 
 impl ApixParameter {
-  pub fn new(
-    name: String,
-    required: bool,
-    password: bool,
-    description: Option<String>,
-    schema: Option<Value>,
-  ) -> Self {
+  pub fn new(name: String, required: bool, password: bool, description: Option<String>, schema: Option<Value>) -> Self {
     Self {
       name,
       required,
@@ -131,12 +125,7 @@ pub struct ApixRequestTemplate {
 }
 
 impl ApixRequestTemplate {
-  pub fn new(
-    method: String,
-    url: String,
-    headers: IndexMap<String, String>,
-    body: Option<Value>,
-  ) -> Self {
+  pub fn new(method: String, url: String, headers: IndexMap<String, String>, body: Option<Value>) -> Self {
     Self {
       method,
       url,
@@ -188,11 +177,7 @@ pub struct ApixRequest {
 }
 
 impl ApixRequest {
-  pub fn new(
-    parameters: Vec<ApixParameter>,
-    context: IndexMap<String, Value>,
-    request: ApixRequestTemplate,
-  ) -> Self {
+  pub fn new(parameters: Vec<ApixParameter>, context: IndexMap<String, Value>, request: ApixRequestTemplate) -> Self {
     Self {
       parameters,
       context,

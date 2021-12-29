@@ -53,9 +53,7 @@ impl<'a> ExecutableRequest<'a> {
           "context",
           &engine.render_value(
             &format!("{}#/context", file),
-            &Value::Object(serde_json::Map::from_iter(
-              request.context.clone().into_iter(),
-            )),
+            &Value::Object(serde_json::Map::from_iter(request.context.clone().into_iter())),
             &context,
           )?,
         );
@@ -80,20 +78,15 @@ impl<'a> ExecutableRequest<'a> {
     self
       .engine
       .add_raw_template(&format!("{}#/url", self.file), &self.request.request.url)?;
-    let url = self
-      .engine
-      .render(&format!("{}#/url", self.file), &self.context)?;
+    let url = self.engine.render(&format!("{}#/url", self.file), &self.context)?;
     Ok(url)
   }
 
   fn render_method(&mut self) -> Result<String> {
-    self.engine.add_raw_template(
-      &format!("{}#/method", self.file),
-      &self.request.request.method,
-    )?;
-    let method = self
+    self
       .engine
-      .render(&format!("{}#/method", self.file), &self.context)?;
+      .add_raw_template(&format!("{}#/method", self.file), &self.request.request.method)?;
+    let method = self.engine.render(&format!("{}#/method", self.file), &self.context)?;
     Ok(method)
   }
 
@@ -118,15 +111,11 @@ impl<'a> ExecutableRequest<'a> {
   }
 
   fn render_body(&mut self) -> Result<Option<Value>> {
-    match (
-      self.request.request.body.as_ref(),
-      self.convert_body_to_json,
-    ) {
+    match (self.request.request.body.as_ref(), self.convert_body_to_json) {
       (Some(Value::String(body)), true) => {
-        let string_body =
-          self
-            .engine
-            .render_string(&format!("{}#/body", self.file), body, &self.context)?;
+        let string_body = self
+          .engine
+          .render_string(&format!("{}#/body", self.file), body, &self.context)?;
         // try to parse as json or return original string if it fails
         Ok(
           serde_json::from_str(&string_body)
@@ -160,12 +149,7 @@ impl<'a> ExecutableRequest<'a> {
   }
 }
 
-pub async fn handle_execute(
-  file: &str,
-  manifest: &ApixManifest,
-  theme: &str,
-  verbose: bool,
-) -> Result<()> {
+pub async fn handle_execute(file: &str, manifest: &ApixManifest, theme: &str, verbose: bool) -> Result<()> {
   let mut request = ExecutableRequest::new(manifest, file.to_string())?;
   let params = request.render_template()?;
   requests::make_request(
