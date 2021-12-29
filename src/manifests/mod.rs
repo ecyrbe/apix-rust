@@ -115,8 +115,6 @@ pub struct ApixStory {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStories {
-  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-  pub definitions: IndexMap<String, Value>,
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   parameters: Vec<ApixParameter>,
   stories: Vec<ApixStory>,
@@ -150,15 +148,12 @@ impl ApixRequestTemplate {
 
 // exemple of an ApixRequest for a GET request in yaml
 //
-//  definitions:
-//    param:
-//      type: string
 //  parameters:
 //    - name: param
 //      required: true
 //      description: param description
 //      schema:
-//        $ref: '#/definitions/param'
+//      type: string
 //   template:
 //     method: GET
 //     url: /api/v1/resources/{param}
@@ -167,15 +162,12 @@ impl ApixRequestTemplate {
 
 // exemple of an ApixRequest for a POST request with body template in yaml
 //
-//  definitions:
-//    param:
-//      type: string
 //  parameters:
 //    - name: param
 //      required: true
 //      description: param description
 //      schema:
-//        $ref: '#/definitions/param'
+//      type: string
 //   template:
 //     method: POST
 //     url: /api/v1/resources
@@ -188,8 +180,6 @@ impl ApixRequestTemplate {
 //       }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixRequest {
-  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
-  pub definitions: IndexMap<String, Value>,
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub parameters: Vec<ApixParameter>,
   #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
@@ -199,13 +189,11 @@ pub struct ApixRequest {
 
 impl ApixRequest {
   pub fn new(
-    definitions: IndexMap<String, Value>,
     parameters: Vec<ApixParameter>,
     context: IndexMap<String, Value>,
     request: ApixRequestTemplate,
   ) -> Self {
     Self {
-      definitions,
       parameters,
       context,
       request,
