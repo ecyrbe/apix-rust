@@ -339,13 +339,12 @@ async fn main() -> Result<()> {
     },
     Some((method, matches)) => {
       if let Some(url) = matches.value_of("url") {
-        let body = Some(match_body(matches)?).filter(|body| body.is_empty());
         requests::make_request(
           &url,
           &method,
           match_headers(matches).as_ref(),
           match_queries(matches).as_ref(),
-          body,
+          match_body(matches)?,
           matches.is_present("verbose"),
           &theme,
         )

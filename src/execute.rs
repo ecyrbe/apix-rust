@@ -1,4 +1,5 @@
 use crate::manifests::ApixRequest;
+use crate::requests::AdvancedBody;
 
 use super::dialog::Dialog;
 use super::requests;
@@ -16,6 +17,7 @@ struct RequestTemplate<'a> {
   engine: Tera,
   context: Context,
   convert_body_to_json: bool,
+  load_body_from_file: Option<String>,
   file: String,
 }
 
@@ -23,7 +25,7 @@ struct RequestParams {
   url: String,
   method: String,
   headers: HeaderMap,
-  body: Option<String>,
+  body: requests::AdvancedBody,
 }
 
 // ask for all parameters in manifest request
@@ -56,11 +58,16 @@ impl<'a> RequestTemplate<'a> {
           .map(|v| bool::from_str(v).unwrap_or(false))
           .unwrap_or(false);
 
+        let load_body_from_file = manifest
+          .get_annotation(&"apix.io/load-body-from-file".to_string())
+          .map(|v| v.to_string());
+
         Ok(Self {
           request,
           engine,
           context,
           convert_body_to_json,
+          load_body_from_file,
           file,
         })
       }
@@ -114,25 +121,28 @@ impl<'a> RequestTemplate<'a> {
     Ok(headers)
   }
 
-  fn render_body(&mut self) -> Result<Option<Value>> {
-    match (self.request.request.body.as_ref(), self.convert_body_to_json) {
-      (Some(Value::String(body)), true) => {
+  fn render_body(&mut self) -> Result<AdvancedBody> {
+    match (
+      self.request.request.body.as_ref(),
+      self.convert_body_to_json,
+      self.load_body_from_file.as_ref(),
+    ) {
+      (Some(Value::String(body)), true, _) => {
         let string_body = self
           .engine
           .render_string(&format!("{}#/body", self.file), body, &self.context)?;
         // try to parse as json or return original string if it fails
-        Ok(
-          serde_json::from_str(&string_body)
-            .or::<serde_json::Error>(Ok(Value::String(string_body)))
-            .ok(),
-        )
+        Ok(AdvancedBody::Json(
+          serde_json::from_str(&string_body).or::<serde_json::Error>(Ok(Value::String(string_body)))?,
+        ))
       }
-      (Some(body), _) => Ok(Some(self.engine.render_value(
+      (Some(body), _, _) => Ok(AdvancedBody::Json(self.engine.render_value(
         &format!("{}#/body", self.file),
         body,
         &self.context,
       )?)),
-      (None, _) => Ok(None),
+      (None, _, Some(file)) => Ok(AdvancedBody::File(file.to_owned())),
+      (None, _, None) => Ok(AdvancedBody::None),
     }
   }
 
@@ -140,10 +150,7 @@ impl<'a> RequestTemplate<'a> {
     let url = self.render_url()?;
     let method = self.render_method()?;
     let headers = self.render_headers()?;
-    let body = match self.render_body()? {
-      Some(body) => Some(serde_json::to_string(&body)?),
-      None => None,
-    };
+    let body = self.render_body()?;
     Ok(RequestParams {
       url,
       method,

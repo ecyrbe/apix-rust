@@ -39,7 +39,11 @@ impl HttpDisplay for Request {
     match (self.body(), self.get_language()) {
       (Some(body), Some(language)) => {
         println!("");
-        pretty_print(body.as_bytes().unwrap(), theme, language)?;
+        pretty_print(
+          body.as_bytes().unwrap_or("SENDING STREAM...".as_bytes()),
+          theme,
+          language,
+        )?;
       }
       _ => {}
     }

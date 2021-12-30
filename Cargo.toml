@@ -13,17 +13,19 @@ clap_generate = "3.0.0-rc.8"
 chrono = "0.4.19"
 dialoguer = "0.9.0"
 dirs = "4.0.0"
+futures = "0.3.19"
 indexmap = { version = "1.7.0", features=["serde"]}
 jsonschema = "0.13.3"
 lazy_static = "1.4.0"
 regex = "1.5.4"
-reqwest = { version="0.11.8", features = ["gzip"] }
+reqwest = { version="0.11.8", features = ["gzip","json","stream"] }
 serde = "1.0.132"
 serde_json = { version = "1.0.73", features=["preserve_order"] }
 serde_yaml = "0.8.23"
 strum = "0.23.0"
 strum_macros = "0.23.1"
 tokio = { version = "1.15.0", features = ["full"] }
+tokio-util = { version = "0.6.9", features = ["full"] }
 tera = "1.15.0"
 url = "2.2.2"
 whoami = "1.2.1"

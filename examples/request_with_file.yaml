@@ -1,0 +1,15 @@
+# example to execute this request:
+# apix exec -f ./examples/request_with_file.yaml
+apiVersion: apix.io/v1
+metadata:
+  name: request_with_file
+  annotations:
+    apix.io/load-body-from-file: "test.json"
+kind: Request
+spec:
+  request:
+    method: post
+    url: https://jsonplaceholder.typicode.com/users
+    headers:
+      accept: application/json
+      content-type: application/json

@@ -1,3 +1,4 @@
+use super::requests::AdvancedBody;
 use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -72,13 +73,13 @@ pub fn match_queries(matches: &clap::ArgMatches) -> Option<HashMap<String, Strin
   }
 }
 
-pub fn match_body(matches: &clap::ArgMatches) -> Result<String> {
+pub fn match_body(matches: &clap::ArgMatches) -> Result<AdvancedBody> {
   if let Some(body) = matches.value_of("body") {
-    Ok(body.to_string())
+    Ok(AdvancedBody::String(body.to_string()))
   } else if let Some(file) = matches.value_of("file") {
-    fs::read_to_string(file).map_err(|err| anyhow::anyhow!("Could not read file '{}': {:#}", file, err))
+    Ok(AdvancedBody::File(file.to_string()))
   } else {
-    Ok(String::new())
+    Ok(AdvancedBody::None)
   }
 }
 
@@ -119,6 +120,6 @@ mod tests {
       .get_matches_from(vec!["test", "--body", "foo"]);
     let body = match_body(&matches);
     assert!(body.is_ok());
-    assert_eq!(body.unwrap(), "foo".to_string());
+    assert_eq!(body.unwrap().to_string().unwrap(), "foo".to_string());
   }
 }
