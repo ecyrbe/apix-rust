@@ -23,9 +23,27 @@
 
 Apix brings ideas from tools like `Git`,`Kubernetes`, `Helm` ,`Httpie`.
 Indeed it's is not just a simple HTTP client, Apix is :  
-- **Beautifull** as it uses [Bat](https://github.com/sharkdp/bat) to pretty print requests and responses
-- **Powerfull** as it uses [Tera](https://tera.netlify.app/) template engine to allow your requests to do complex things if you want them to (see [examples](/examples))
+- **Pretty** as it uses [Bat](https://github.com/sharkdp/bat) to pretty print requests and responses
+```bash
+> apix get https://apix.io/json
+{
+  "id": 0,
+  "test": "hello"
+}
+```
+- **Beatifull** as it uses [indicatif]() to show modern command line progress bars when uploading or downloading files
+```bash
+> apix get https://apix.io/test.mp4
+Downloading File test.mp4
+⠙ [00:00:28] [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.98MiB/298.06MiB (549.87KiB/s, 8m)
+```
 - **Friendly** to use as it uses [Dialoguer](https://docs.rs/dialoguer/latest/dialoguer/index.html) for interactive prompt to guide you when creating requests or executing them
+```bash
+> apix exec -f request.yaml
+✔ todoId · 1
+? email ("ecyrbe@gmail.com") › 
+```
+- **Powerfull** as it uses [Tera](https://tera.netlify.app/) template engine to allow your requests to do complex things if you want them to (see [examples](/examples))
 - **Easy** to use in the command line as it uses [Clap](https://docs.rs/clap/latest/clap/) autocompletion
 - **Reusable** as it stores your requests in your file system in a readable format for later use (yaml)
 - **Helping you not forget** as it stores the response of the requests so you can consult them at any time
