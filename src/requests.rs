@@ -2,14 +2,16 @@ use super::http_display::{pretty_print, HttpDisplay};
 use super::http_utils::Language;
 use anyhow::Result;
 use futures::stream::TryStreamExt;
+use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, USER_AGENT},
   Body, Client, Method,
 };
 use std::collections::HashMap;
+use std::fs::File;
 use std::str::FromStr;
-use tokio::fs::File;
+use tokio::fs::File as AsyncFile;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
@@ -74,8 +76,16 @@ pub async fn make_request(
       builder = builder.body(body);
     }
     AdvancedBody::File(file_path) => {
-      let file = File::open(file_path).await?;
-      let stream = FramedRead::new(file, BytesCodec::new());
+      let file = File::open(file_path)?;
+      let file_size = file.metadata()?.len();
+      let progress_bar = ProgressBar::new(file_size);
+      progress_bar.set_style(ProgressStyle::default_bar().template(
+        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+      ));
+      let async_file = AsyncFile::from_std(file);
+      let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
+        progress_bar.inc(bytes.len() as u64);
+      });
       builder = builder.body(Body::wrap_stream(stream));
     }
     AdvancedBody::Json(body) => {
@@ -97,6 +107,7 @@ pub async fn make_request(
   let response_body = result.text().await?;
   if !response_body.is_empty() {
     pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
+    println!("");
   }
   Ok(())
 }
