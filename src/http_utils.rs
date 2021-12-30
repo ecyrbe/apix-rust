@@ -35,7 +35,8 @@ where
         Ok(content_type) if content_type.contains("css") => Some("css"),
         Ok(content_type) if content_type.contains("javascript") => Some("js"),
         Ok(content_type) if content_type.contains("yaml") => Some("yaml"),
-        _ => Some("txt"),
+        Ok(content_type) if content_type.contains("text") => Some("txt"),
+        _ => Some("binary"),
       },
       _ => None,
     }
@@ -88,7 +89,10 @@ mod test_get_language {
   #[test_case("text/html" => "html")]
   #[test_case("text/css" => "css")]
   #[test_case("text/javascript" => "js")]
+  #[test_case("text/x-yaml" => "yaml")]
   #[test_case("text/plain" => "txt")]
+  #[test_case("application/octet-stream" => "binary")]
+  #[test_case("application/pdf" => "binary")]
   fn test_get_language(content_type: &str) -> &str {
     MockHttpHeaders::from_content_type(content_type).get_language().unwrap()
   }

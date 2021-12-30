@@ -13,6 +13,8 @@ use std::fs::File;
 use std::str::FromStr;
 use tokio::fs::File as AsyncFile;
 use tokio_util::codec::{BytesCodec, FramedRead};
+use tokio_util::compat::FuturesAsyncReadCompatExt;
+use url::Url;
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
@@ -76,15 +78,19 @@ pub async fn make_request(
       builder = builder.body(body);
     }
     AdvancedBody::File(file_path) => {
-      let file = File::open(file_path)?;
+      let file = File::open(&file_path)?;
       let file_size = file.metadata()?.len();
       let progress_bar = ProgressBar::new(file_size);
       progress_bar.set_style(ProgressStyle::default_bar().template(
-        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+        "{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
       ));
+      progress_bar.set_message(format!("Uploading File {}", file_path));
       let async_file = AsyncFile::from_std(file);
       let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
         progress_bar.inc(bytes.len() as u64);
+        if progress_bar.is_finished() {
+          progress_bar.finish_with_message("Upload Complete");
+        }
       });
       builder = builder.body(Body::wrap_stream(stream));
     }
@@ -104,10 +110,36 @@ pub async fn make_request(
     println!("");
   }
   let language = result.get_language();
-  let response_body = result.text().await?;
-  if !response_body.is_empty() {
-    pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
-    println!("");
+  if let Some("binary") = language {
+    let progress_bar = ProgressBar::new(result.content_length().unwrap_or(0));
+    progress_bar.set_style(ProgressStyle::default_bar().template(
+      "{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+    ));
+    let mut stream = result
+      .bytes_stream()
+      .inspect_ok(|bytes| {
+        progress_bar.inc(bytes.len() as u64);
+      })
+      .map_err(|e| futures::io::Error::new(futures::io::ErrorKind::Other, e))
+      .into_async_read()
+      .compat();
+
+    let url = Url::parse(url)?;
+    let filename = url
+      .path_segments()
+      .and_then(|segments| segments.last())
+      .unwrap_or("unknown.bin"); // Fallback to generic filename
+
+    progress_bar.set_message(format!("Downloading {}", filename));
+    let mut file = AsyncFile::create(filename).await?;
+    tokio::io::copy(&mut stream, &mut file).await?;
+    progress_bar.finish_with_message("Download Complete");
+  } else {
+    let response_body = result.text().await?;
+    if !response_body.is_empty() {
+      pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
+      println!("");
+    }
   }
   Ok(())
 }

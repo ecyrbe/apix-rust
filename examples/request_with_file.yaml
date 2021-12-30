@@ -4,6 +4,9 @@ apiVersion: apix.io/v1
 metadata:
   name: request_with_file
   annotations:
+    # you can upload files to body instead of using the body field
+    # but templating is not supported for files
+    # you should then use external files to upload large binary files
     apix.io/load-body-from-file: "test.json"
 kind: Request
 spec:
