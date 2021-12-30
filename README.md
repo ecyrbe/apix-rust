@@ -93,40 +93,22 @@ Apix will colorize the output according to http **content-type** header informat
 By default Apix will assume you are doing an API request using json.
 
 ```bash
-> apix get https://jsonplaceholder.typicode.com/todos?_limit=3
+> apix get https://jsonplaceholder.typicode.com/todos?_limit=1
 or
-> apix get https://jsonplaceholder.typicode.com/todos --query _limit:3
-```
+> apix get https://jsonplaceholder.typicode.com/todos --query _limit:1
 
-result:
-```json
 [
   {
     "userId": 1,
     "id": 1,
     "title": "delectus aut autem",
     "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 2,
-    "title": "quis ut nam facilis et officia qui",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 3,
-    "title": "fugiat veniam minus",
-    "completed": false
   }
 ]
 ```
 you can also ask for verbose mode where apix will show you the full sended http request and response :
 ```bash
-apix get -v https://jsonplaceholder.typicode.com/todos -q_limit:3
-```
-
-```http
+> apix get -v https://jsonplaceholder.typicode.com/todos -q_limit:1
 GET /todos?_limit=3 HTTP/1.1
 host: jsonplaceholder.typicode.com
 user-agent: apix/0.1.0
@@ -134,52 +116,22 @@ accept: application/json
 accept-encoding: gzip
 content-type: application/json
 
-
 HTTP/1.1 200 OK
 date: Sun, 21 Nov 2021 17:29:22 GMT
 content-type: application/json; charset=utf-8
 transfer-encoding: chunked
 connection: keep-alive
-x-powered-by: Express
-x-ratelimit-limit: 1000
-x-ratelimit-remaining: 999
-x-ratelimit-reset: 1637414626
-vary: Origin, Accept-Encoding
 access-control-allow-credentials: true
 cache-control: max-age=43200
 pragma: no-cache
 expires: -1
-x-total-count: 200
-access-control-expose-headers: X-Total-Count
-x-content-type-options: nosniff
 etag: W/"136-fTr038fftlG9yIOWHGimupdrQDg"
-via: 1.1 vegur
-cf-cache-status: HIT
-age: 245
-expect-ct: max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
-report-to: {"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=CNFD1NndglvJcN9a1H3598U00GWBduBRMWYbNy2Cvy3QSws5PwaQGkHGmWkOuJ2gv%2FAmhUZkS3jPUc9VLF7sKQrtr2Rc%2FjdnmNP%2BbPZeMzGbA4yKcDakLQ7hGhDllBqUymlO5J2jcB%2BGBNETIoNnt8Q1mDdVJZhNC9cd"}],"group":"cf-nel","max_age":604800}
-nel: {"success_fraction":0,"report_to":"cf-nel","max_age":604800}
-server: cloudflare
-cf-ray: 6b1ba3c97d633b85-CDG
-alt-svc: h3=":443"; ma=86400, h3-29=":443"; ma=86400, h3-28=":443"; ma=86400, h3-27=":443"; ma=86400
 
 [
   {
     "userId": 1,
     "id": 1,
     "title": "delectus aut autem",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 2,
-    "title": "quis ut nam facilis et officia qui",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 3,
-    "title": "fugiat veniam minus",
     "completed": false
   }
 ]
