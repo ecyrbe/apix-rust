@@ -95,7 +95,8 @@ pub async fn make_request(
   }
   let language = result.get_language();
   let response_body = result.text().await?;
-  pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
-  println!("");
+  if !response_body.is_empty() {
+    pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
+  }
   Ok(())
 }
