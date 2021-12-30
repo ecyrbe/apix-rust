@@ -73,3 +73,65 @@ impl StringTemplate for Tera {
     self.render(name, context)
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use serde_json::json;
+  use tera::{Context, Tera};
+
+  #[test]
+  fn test_render_value_object() {
+    let mut tera = Tera::default();
+    let mut context = Context::new();
+    context.insert("context", &json!({ "test": "test" }));
+    let rendered = tera
+      .render_value(
+        "test",
+        &json!({"test": "{{context.test}}","another": "{{context.test}}"}),
+        &context,
+      )
+      .expect("render value object");
+    assert_eq!(rendered, json!({"test":"test","another":"test"}));
+  }
+
+  #[test]
+  fn test_render_value_array() {
+    let mut tera = Tera::default();
+    let mut context = Context::new();
+    context.insert("context", &json!({ "test": "test" }));
+    let rendered = tera
+      .render_value("test", &json!(["{{context.test}}", "{{context.test}}"]), &context)
+      .expect("render value array");
+    assert_eq!(rendered, json!(["test", "test"]));
+  }
+
+  #[test]
+  fn test_render_map() {
+    let mut tera = Tera::default();
+    let mut context = Context::new();
+    context.insert("context", &json!({ "test": "test" }));
+    let rendered = tera
+      .render_map(
+        "test",
+        &IndexMap::from_iter(vec![("test".to_string(), "{{context.test}}".to_string())]),
+        &context,
+      )
+      .expect("render map");
+    assert_eq!(
+      rendered,
+      IndexMap::<String, String>::from_iter(vec![("test".to_string(), "test".to_string())])
+    );
+  }
+
+  #[test]
+  fn test_render_string() {
+    let mut tera = Tera::default();
+    let mut context = Context::new();
+    context.insert("context", &json!({ "test": "test" }));
+    let rendered = tera
+      .render_string("test", "{{context.test}} {{context.test}}", &context)
+      .expect("render string");
+    assert_eq!(rendered, "test test");
+  }
+}
