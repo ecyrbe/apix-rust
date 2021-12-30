@@ -31,7 +31,7 @@ Indeed it's is not just a simple HTTP client, Apix is :
   "test": "hello"
 }
 ```
-- **Beatifull** as it uses [indicatif]() to show modern command line progress bars when uploading or downloading files
+- **Beatifull** as it uses [Indicatif](https://docs.rs/indicatif/latest/indicatif/index.html) to show modern command line progress bars when uploading or downloading files
 ```bash
 > apix get https://apix.io/test.mp4
 Downloading File test.mp4
@@ -41,7 +41,9 @@ Downloading File test.mp4
 ```bash
 > apix exec -f request.yaml
 ✔ todoId · 1
-? email ("ecyrbe@gmail.com") › 
+? email ("ecyrbe@gmail.com") › bad\gmail.com
+✘ Invalid input:
+cause 0: "bad\gmail.com" is not a "email"
 ```
 - **Powerfull** as it uses [Tera](https://tera.netlify.app/) template engine to allow your requests to do complex things if you want them to (see [examples](/examples))
 - **Easy** to use in the command line as it uses [Clap](https://docs.rs/clap/latest/clap/) autocompletion
