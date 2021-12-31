@@ -1,8 +1,8 @@
 use super::http_display::{pretty_print, HttpDisplay};
 use super::http_utils::Language;
+use super::progress_component::FileProgressComponent;
 use anyhow::Result;
 use futures::stream::TryStreamExt;
-use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, USER_AGENT},
@@ -54,59 +54,6 @@ impl AdvancedBody {
   }
 }
 
-struct FileProgress {
-  path: String,
-  progress: ProgressBar,
-}
-
-enum FileProgressComponent {
-  Download(FileProgress),
-  Upload(FileProgress),
-}
-
-impl FileProgress {
-  fn new(path: String, size_hint: u64) -> Self {
-    let progress = ProgressBar::new(size_hint);
-    progress.set_style(ProgressStyle::default_bar().template(
-      "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
-    ));
-    Self { path, progress }
-  }
-}
-
-impl FileProgressComponent {
-  fn new_download(path: String, size_hint: u64) -> Self {
-    let progress = FileProgress::new(path, size_hint);
-    FileProgressComponent::Download(progress)
-  }
-  fn new_upload(path: String, size_hint: u64) -> Self {
-    let progress = FileProgress::new(path, size_hint);
-    FileProgressComponent::Upload(progress)
-  }
-  fn update_progress(&self, bytes: u64) {
-    match self {
-      FileProgressComponent::Download(component) => {
-        component
-          .progress
-          .set_message(format!("Downloading File {}", component.path));
-        component.progress.inc(bytes);
-        if component.progress.is_finished() {
-          component.progress.finish_with_message("Download Complete");
-        }
-      }
-      FileProgressComponent::Upload(component) => {
-        component
-          .progress
-          .set_message(format!("Uploading File {}", component.path));
-        component.progress.inc(bytes);
-        if component.progress.is_finished() {
-          component.progress.finish_with_message("Upload Complete");
-        }
-      }
-    }
-  }
-}
-
 pub async fn make_request(
   url: &str,
   method: &str,
@@ -131,7 +78,8 @@ pub async fn make_request(
       builder = builder.body(body);
     }
     AdvancedBody::File(file_path) => {
-      let file = File::open(&file_path)?;
+      let file =
+        File::open(&file_path).map_err(|e| anyhow::anyhow!("Could not open File '{}'\nCause: {}", &file_path, e))?;
       let file_size = file.metadata()?.len();
       let progress_bar = FileProgressComponent::new_upload(file_path, file_size);
       let async_file = AsyncFile::from_std(file);
