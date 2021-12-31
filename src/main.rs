@@ -5,6 +5,7 @@ mod http_utils;
 mod import;
 mod manifests;
 mod match_params;
+mod progress_component;
 mod requests;
 mod template;
 mod validators;
