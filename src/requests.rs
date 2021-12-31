@@ -84,9 +84,9 @@ pub async fn make_request(
       progress_bar.set_style(ProgressStyle::default_bar().template(
         "{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
       ));
-      progress_bar.set_message(format!("Uploading File {}", file_path));
       let async_file = AsyncFile::from_std(file);
       let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
+        progress_bar.set_message(format!("Uploading File {}", file_path));
         progress_bar.inc(bytes.len() as u64);
         if progress_bar.is_finished() {
           progress_bar.finish_with_message("Upload Complete");
