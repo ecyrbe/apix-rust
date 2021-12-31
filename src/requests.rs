@@ -54,6 +54,59 @@ impl AdvancedBody {
   }
 }
 
+struct FileProgress {
+  path: String,
+  progress: ProgressBar,
+}
+
+enum FileProgressComponent {
+  Download(FileProgress),
+  Upload(FileProgress),
+}
+
+impl FileProgress {
+  fn new(path: String, size_hint: u64) -> Self {
+    let progress = ProgressBar::new(size_hint);
+    progress.set_style(ProgressStyle::default_bar().template(
+      "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+    ));
+    Self { path, progress }
+  }
+}
+
+impl FileProgressComponent {
+  fn new_download(path: String, size_hint: u64) -> Self {
+    let progress = FileProgress::new(path, size_hint);
+    FileProgressComponent::Download(progress)
+  }
+  fn new_upload(path: String, size_hint: u64) -> Self {
+    let progress = FileProgress::new(path, size_hint);
+    FileProgressComponent::Upload(progress)
+  }
+  fn update_progress(&self, bytes: u64) {
+    match self {
+      FileProgressComponent::Download(component) => {
+        component
+          .progress
+          .set_message(format!("Downloading File {}", component.path));
+        component.progress.inc(bytes);
+        if component.progress.is_finished() {
+          component.progress.finish_with_message("Download Complete");
+        }
+      }
+      FileProgressComponent::Upload(component) => {
+        component
+          .progress
+          .set_message(format!("Uploading File {}", component.path));
+        component.progress.inc(bytes);
+        if component.progress.is_finished() {
+          component.progress.finish_with_message("Upload Complete");
+        }
+      }
+    }
+  }
+}
+
 pub async fn make_request(
   url: &str,
   method: &str,
@@ -80,17 +133,10 @@ pub async fn make_request(
     AdvancedBody::File(file_path) => {
       let file = File::open(&file_path)?;
       let file_size = file.metadata()?.len();
-      let progress_bar = ProgressBar::new(file_size);
-      progress_bar.set_style(ProgressStyle::default_bar().template(
-        "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
-      ));
+      let progress_bar = FileProgressComponent::new_upload(file_path, file_size);
       let async_file = AsyncFile::from_std(file);
       let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
-        progress_bar.set_message(format!("Uploading File {}", file_path));
-        progress_bar.inc(bytes.len() as u64);
-        if progress_bar.is_finished() {
-          progress_bar.finish_with_message("Upload Complete");
-        }
+        progress_bar.update_progress(bytes.len() as u64);
       });
       builder = builder.body(Body::wrap_stream(stream));
     }
@@ -111,29 +157,24 @@ pub async fn make_request(
   }
   let language = result.get_language();
   if let Some("binary") = language {
-    let progress_bar = ProgressBar::new(result.content_length().unwrap_or(0));
-    progress_bar.set_style(ProgressStyle::default_bar().template(
-      "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
-    ));
-    let mut stream = result
-      .bytes_stream()
-      .inspect_ok(|bytes| {
-        progress_bar.inc(bytes.len() as u64);
-      })
-      .map_err(|e| futures::io::Error::new(futures::io::ErrorKind::Other, e))
-      .into_async_read()
-      .compat();
-
     let url = Url::parse(url)?;
     let filename = url
       .path_segments()
       .and_then(|segments| segments.last())
       .unwrap_or("unknown.bin"); // Fallback to generic filename
 
-    progress_bar.set_message(format!("Downloading {}", filename));
+    let progress_bar = FileProgressComponent::new_download(filename.to_owned(), result.content_length().unwrap_or(0));
+    let mut stream = result
+      .bytes_stream()
+      .inspect_ok(move |bytes| {
+        progress_bar.update_progress(bytes.len() as u64);
+      })
+      .map_err(|e| futures::io::Error::new(futures::io::ErrorKind::Other, e))
+      .into_async_read()
+      .compat();
+
     let mut file = AsyncFile::create(filename).await?;
     tokio::io::copy(&mut stream, &mut file).await?;
-    progress_bar.finish_with_message("Download Complete");
   } else {
     let response_body = result.text().await?;
     if !response_body.is_empty() {
