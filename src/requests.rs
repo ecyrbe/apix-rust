@@ -82,7 +82,7 @@ pub async fn make_request(
       let file_size = file.metadata()?.len();
       let progress_bar = ProgressBar::new(file_size);
       progress_bar.set_style(ProgressStyle::default_bar().template(
-        "{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+        "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
       ));
       let async_file = AsyncFile::from_std(file);
       let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
@@ -113,7 +113,7 @@ pub async fn make_request(
   if let Some("binary") = language {
     let progress_bar = ProgressBar::new(result.content_length().unwrap_or(0));
     progress_bar.set_style(ProgressStyle::default_bar().template(
-      "{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
+      "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
     ));
     let mut stream = result
       .bytes_stream()
