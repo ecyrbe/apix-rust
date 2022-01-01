@@ -1,6 +1,6 @@
 use super::match_params::RequestParam;
 use anyhow::Result;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use url::Url;
 
@@ -14,9 +14,7 @@ pub fn validate_url(str_url: &str) -> Result<Url> {
 }
 
 pub fn validate_param(param: &str, request_type: RequestParam) -> Result<()> {
-  lazy_static! {
-    static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap();
-  }
+  static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
   if RE.is_match(param) {
     Ok(())
   } else {

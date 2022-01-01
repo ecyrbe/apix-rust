@@ -3,7 +3,7 @@ use super::http_utils::Language;
 use super::progress_component::FileProgressComponent;
 use anyhow::Result;
 use futures::stream::TryStreamExt;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, USER_AGENT},
   Body, Client, Method,
@@ -18,14 +18,14 @@ use url::Url;
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
-lazy_static! {
-  static ref DEFAULT_HEADERS: HeaderMap = HeaderMap::from_iter([
+static DEFAULT_HEADERS: Lazy<HeaderMap> = Lazy::new(|| {
+  HeaderMap::from_iter([
     (USER_AGENT, HeaderValue::from_str(APP_USER_AGENT).unwrap()),
     (ACCEPT, HeaderValue::from_static("application/json")),
     (ACCEPT_ENCODING, HeaderValue::from_static("gzip")),
     (CONTENT_TYPE, HeaderValue::from_static("application/json")),
-  ]);
-}
+  ])
+});
 
 fn merge_with_defaults(headers: &HeaderMap) -> HeaderMap {
   let mut merged = DEFAULT_HEADERS.clone();

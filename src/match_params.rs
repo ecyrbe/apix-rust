@@ -1,10 +1,9 @@
 use super::requests::AdvancedBody;
 use anyhow::Result;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use std::collections::HashMap;
-use std::fs;
 use std::str::FromStr;
 use strum_macros::Display;
 
@@ -23,9 +22,8 @@ struct HeaderTuple(HeaderName, HeaderValue);
 impl FromStr for HeaderTuple {
   type Err = anyhow::Error;
   fn from_str(header_string: &str) -> Result<Self, Self::Err> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
-    }
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
+
     let header_split = RE.captures(header_string).ok_or(anyhow::anyhow!(
       "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
       header_string
@@ -43,9 +41,8 @@ struct QueryTuple(String, String);
 impl FromStr for QueryTuple {
   type Err = anyhow::Error;
   fn from_str(query_string: &str) -> Result<Self, Self::Err> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new("^([\\w-]+):(.*)$").unwrap(); // safe unwrap
-    }
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
+
     let query = query_string.to_string();
     let header_split = RE.captures(&query).ok_or(anyhow::anyhow!(
       "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",

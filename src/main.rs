@@ -14,12 +14,11 @@ use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
 use execute::handle_execute;
 use http_display::pretty_print;
-use lazy_static::lazy_static;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
+use once_cell::sync::Lazy;
 use std::io;
 use std::string::ToString;
-use std::sync::Mutex;
 use validators::{validate_param, validate_url};
 
 fn print_completions<G: Generator>(gen: G, app: &mut App) {
@@ -27,8 +26,8 @@ fn print_completions<G: Generator>(gen: G, app: &mut App) {
 }
 
 fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  lazy_static! {
-    static ref ARGS: [Arg<'static>; 8] = [
+  static ARGS: Lazy<[Arg<'static>; 8]> = Lazy::new(|| {
+    [
       Arg::new("url")
         .help("url to request, can be a 'Tera' template")
         .required(true)
@@ -78,34 +77,30 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .help("allow insecure connections when using https")
         .short('i')
         .long("insecure"),
-    ];
-  }
+    ]
+  });
   ARGS.iter()
 }
 
 fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  lazy_static! {
-    static ref EXEC_ARGS: [Arg<'static>; 1] = [Arg::new("file")
+  static EXEC_ARGS: Lazy<[Arg<'static>; 1]> = Lazy::new(|| {
+    [Arg::new("file")
       .help("path to the manifest file request to execute")
       .short('f')
       .long("file")
       .required(true)
       .takes_value(true)
-      .value_hint(ValueHint::FilePath)];
-  }
+      .value_hint(ValueHint::FilePath)]
+  });
   EXEC_ARGS.iter()
 }
 
 fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  lazy_static! {
-    static ref CREATE_ARGS: [Arg<'static>; 9] = [
-      Arg::new("name")
-        .help("name of request to create")
-        .required(true)
-        .index(1),
+  static CREATE_ARGS: Lazy<[Arg<'static>; 9]> = Lazy::new(|| {
+    [
+      Arg::new("name").help("name of request to create").index(1),
       Arg::new("url")
         .help("url to request, can be a 'Tera' template")
-        .required(true)
         .validator(validate_url)
         .index(2),
       Arg::new("header")
@@ -138,7 +133,7 @@ fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
       Arg::new("file")
         .short('f')
         .long("file")
-        .help("set body from file to send with request, can be a 'Tera' template",)
+        .help("set body from file to send with request, can be a 'Tera' template")
         .takes_value(true)
         .conflicts_with("body")
         .value_hint(ValueHint::FilePath),
@@ -153,8 +148,8 @@ fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .help("allow insecure connections when using https")
         .short('i')
         .long("insecure"),
-    ];
-  }
+    ]
+  });
   CREATE_ARGS.iter()
 }
 
@@ -224,11 +219,13 @@ fn build_cli() -> App<'static> {
         .about("apix control interface for handling multiple APIs")
         .subcommands([
           App::new("apply").about("apply an apix manifest into current project"),
-          App::new("create")
-            .about("create a new apix manifest")
-            .subcommands([App::new("request")
+          App::new("create").about("create a new apix manifest").subcommands([
+            App::new("request")
               .about("create a new request")
-              .args(build_create_request_args())]),
+              .args(build_create_request_args()),
+            App::new("story").about("create a new story"),
+            // .args(build_create_story_args()),
+          ]),
           App::new("init").about("initialise a new API context"),
           App::new("switch").about("switch API context"),
           App::new("edit").about("edit an existing apix resource with current terminal EDITOR"),
@@ -258,16 +255,11 @@ async fn handle_import(url: &str) -> Result<()> {
   Ok(())
 }
 
-// load configuration as a lazy static varibale
-lazy_static! {
-  static ref CONFIG: Mutex<ApixConfiguration> = Mutex::new(ApixConfiguration::load().unwrap());
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
   let matches = build_cli().get_matches();
   // read config file
-  let theme = CONFIG.lock().unwrap().get("theme").unwrap().clone();
+  let theme = ApixConfiguration::once().get("theme").unwrap().clone();
   match matches.subcommand() {
     Some(("completions", matches)) => {
       if let Ok(generator) = matches.value_of_t::<Shell>("shell") {
@@ -278,14 +270,14 @@ async fn main() -> Result<()> {
     Some(("config", matches)) => match matches.subcommand() {
       Some(("list", _)) => {
         pretty_print(
-          serde_yaml::to_string(&CONFIG.lock().unwrap().clone())?.as_bytes(),
+          serde_yaml::to_string(ApixConfiguration::once())?.as_bytes(),
           &theme,
           "yaml",
         )?;
       }
       Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
         (Some(key), Some(value)) => {
-          if let Some(old_value) = CONFIG.lock().unwrap().set(key.to_string(), value.to_string()) {
+          if let Some(old_value) = ApixConfiguration::once().set(key.to_string(), value.to_string()) {
             println!("Replaced config key");
             pretty_print(
               format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
@@ -296,22 +288,22 @@ async fn main() -> Result<()> {
             println!("Set config key");
             pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
           }
-          CONFIG.lock().unwrap().save()?;
+          ApixConfiguration::once().save()?;
         }
         _ => {}
       },
       Some(("get", matches)) => {
         let key = matches.value_of("name").unwrap();
-        if let Some(value) = CONFIG.lock().unwrap().get(key) {
+        if let Some(value) = ApixConfiguration::once().get(key) {
           pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
         }
       }
       Some(("delete", matches)) => {
         let key = matches.value_of("name").unwrap();
-        if let Some(value) = CONFIG.lock().unwrap().delete(key) {
+        if let Some(value) = ApixConfiguration::once().delete(key) {
           println!("Deleted config key");
           pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
-          CONFIG.lock().unwrap().save()?;
+          ApixConfiguration::once().save()?;
         }
       }
       _ => {}

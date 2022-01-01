@@ -1,9 +1,10 @@
 use super::{ApixKind, ApixManifest, ApixManifestV1, ApixMetadata};
 use anyhow::Result;
 use indexmap::{indexmap, IndexMap};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::fs;
+use std::{fs, ops::DerefMut};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixConfiguration {
@@ -20,6 +21,11 @@ impl Default for ApixConfiguration {
 }
 
 impl ApixConfiguration {
+  pub fn once() -> &'static mut ApixConfiguration {
+    static mut CONFIG: Lazy<ApixConfiguration> = Lazy::new(|| ApixConfiguration::load().unwrap());
+    unsafe { CONFIG.deref_mut() }
+  }
+
   // private function to create apix directory if it does not exist
   fn create_apix_dir_if_not_exists() -> Result<std::path::PathBuf> {
     let apix_dir = dirs::home_dir()
