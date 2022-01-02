@@ -120,16 +120,25 @@ pub struct ApixRequestTemplate {
   pub url: String,
   #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
   pub headers: IndexMap<String, String>,
+  #[serde(default, skip_serializing_if = "IndexMap::is_empty")]
+  pub queries: IndexMap<String, String>,
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub body: Option<Value>,
 }
 
 impl ApixRequestTemplate {
-  pub fn new(method: String, url: String, headers: IndexMap<String, String>, body: Option<Value>) -> Self {
+  pub fn new(
+    method: String,
+    url: String,
+    headers: IndexMap<String, String>,
+    queries: IndexMap<String, String>,
+    body: Option<Value>,
+  ) -> Self {
     Self {
       method,
       url,
       headers,
+      queries,
       body,
     }
   }

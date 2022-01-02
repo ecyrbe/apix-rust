@@ -1,9 +1,9 @@
 use super::requests::AdvancedBody;
 use anyhow::Result;
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use std::collections::HashMap;
 use std::str::FromStr;
 use strum_macros::Display;
 
@@ -61,10 +61,10 @@ pub fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::Head
   }
 }
 
-pub fn match_queries(matches: &clap::ArgMatches) -> Option<HashMap<String, String>> {
+pub fn match_queries(matches: &clap::ArgMatches) -> Option<IndexMap<String, String>> {
   if let Ok(query_tuples) = matches.values_of_t::<QueryTuple>("query") {
     let queries = query_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-    Some(HashMap::from_iter(queries))
+    Some(IndexMap::from_iter(queries))
   } else {
     None
   }

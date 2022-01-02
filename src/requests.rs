@@ -3,12 +3,12 @@ use super::http_utils::Language;
 use super::progress_component::FileProgressComponent;
 use anyhow::Result;
 use futures::stream::TryStreamExt;
+use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, USER_AGENT},
   Body, Client, Method,
 };
-use std::collections::HashMap;
 use std::fs::File;
 use std::str::FromStr;
 use tokio::fs::File as AsyncFile;
@@ -58,7 +58,7 @@ pub async fn make_request(
   url: &str,
   method: &str,
   headers: Option<&HeaderMap>,
-  queries: Option<&HashMap<String, String>>,
+  queries: Option<&IndexMap<String, String>>,
   body: AdvancedBody,
   verbose: bool,
   theme: &str,

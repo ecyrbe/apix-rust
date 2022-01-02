@@ -6,6 +6,7 @@ use super::requests;
 use super::template::{MapTemplate, StringTemplate, ValueTemplate};
 use super::{ApixKind, ApixManifest};
 use anyhow::Result;
+use indexmap::IndexMap;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -25,6 +26,7 @@ struct RequestParams {
   url: String,
   method: String,
   headers: HeaderMap,
+  queries: IndexMap<String, String>,
   body: requests::AdvancedBody,
 }
 
@@ -121,6 +123,15 @@ impl<'a> RequestTemplate<'a> {
     Ok(headers)
   }
 
+  fn render_queries(&mut self) -> Result<IndexMap<String, String>> {
+    let queries = self.engine.render_map(
+      &format!("{}#/queries", self.file),
+      &self.request.request.queries,
+      &self.context,
+    )?;
+    Ok(queries)
+  }
+
   fn render_body(&mut self) -> Result<AdvancedBody> {
     match (
       self.request.request.body.as_ref(),
@@ -150,11 +161,13 @@ impl<'a> RequestTemplate<'a> {
     let url = self.render_url()?;
     let method = self.render_method()?;
     let headers = self.render_headers()?;
+    let queries = self.render_queries()?;
     let body = self.render_body()?;
     Ok(RequestParams {
       url,
       method,
       headers,
+      queries,
       body,
     })
   }
@@ -168,7 +181,7 @@ pub async fn handle_execute(file: &str, manifest: &ApixManifest, theme: &str, ve
     &params.url,
     &params.method,
     Some(&params.headers),
-    None,
+    Some(&params.queries),
     params.body,
     verbose,
     theme,
