@@ -12,9 +12,12 @@ mod validators;
 use anyhow::Result;
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_generate::{generate, Generator, Shell};
+use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 use execute::handle_execute;
 use http_display::pretty_print;
-use manifests::{ApixConfiguration, ApixKind, ApixManifest};
+use indexmap::indexmap;
+use indexmap::IndexMap;
+use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequestTemplate};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
 use once_cell::sync::Lazy;
 use std::io;
@@ -219,13 +222,16 @@ fn build_cli() -> App<'static> {
         .about("apix control interface for handling multiple APIs")
         .subcommands([
           App::new("apply").about("apply an apix manifest into current project"),
-          App::new("create").about("create a new apix manifest").subcommands([
-            App::new("request")
-              .about("create a new request")
-              .args(build_create_request_args()),
-            App::new("story").about("create a new story"),
-            // .args(build_create_story_args()),
-          ]),
+          App::new("create")
+            .setting(AppSettings::SubcommandRequiredElseHelp)
+            .about("create a new apix manifest")
+            .subcommands([
+              App::new("request")
+                .about("create a new request")
+                .args(build_create_request_args()),
+              App::new("story").about("create a new story"),
+              // .args(build_create_story_args()),
+            ]),
           App::new("init").about("initialise a new API context"),
           App::new("switch").about("switch API context"),
           App::new("edit").about("edit an existing apix resource with current terminal EDITOR"),
@@ -318,6 +324,91 @@ async fn main() -> Result<()> {
     }
     Some(("ctl", matches)) => match matches.subcommand() {
       Some(("apply", _submatches)) => {}
+      Some(("create", submatches)) => match submatches.subcommand() {
+        Some(("request", _submatches)) => {
+          let name = Input::<String>::with_theme(&ColorfulTheme::default())
+            .with_prompt("Request name")
+            .interact_text()?;
+          let methods = ["GET", "POST", "PUT", "DELETE"];
+          let method = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Request method")
+            .default(0)
+            .items(&methods)
+            .interact()?;
+          let url = Input::<String>::with_theme(&ColorfulTheme::default())
+            .with_prompt("Request url")
+            .validate_with(|url: &String| {
+              validate_url(&url.to_owned())?;
+              Ok::<(), anyhow::Error>(())
+            })
+            .interact_text()?;
+          // add headers
+          let mut headers = IndexMap::<String, String>::new();
+          loop {
+            let add = Confirm::with_theme(&ColorfulTheme::default())
+              .with_prompt("Add a request header?")
+              .interact()?;
+            if add {
+              let header_name = Input::<String>::with_theme(&ColorfulTheme::default())
+                .with_prompt("Header name")
+                .interact_text()?;
+              let header_value = Input::<String>::with_theme(&ColorfulTheme::default())
+                .with_prompt("Header value")
+                .interact_text()?;
+              headers.insert(header_name, header_value);
+            } else {
+              break;
+            }
+          }
+          // add queries
+          let mut queries = IndexMap::<String, String>::new();
+          loop {
+            let add = Confirm::with_theme(&ColorfulTheme::default())
+              .with_prompt("Add a request query?")
+              .interact()?;
+            if add {
+              let query_name = Input::<String>::with_theme(&ColorfulTheme::default())
+                .with_prompt("Query name")
+                .interact_text()?;
+              let query_value = Input::<String>::with_theme(&ColorfulTheme::default())
+                .with_prompt("Query value")
+                .interact_text()?;
+              queries.insert(query_name, query_value);
+            } else {
+              break;
+            }
+          }
+
+          let body = if Confirm::with_theme(&ColorfulTheme::default())
+            .with_prompt("Add a request body?")
+            .interact()?
+          {
+            Some(serde_json::Value::String(
+              Input::<String>::with_theme(&ColorfulTheme::default())
+                .with_prompt("Request body")
+                .interact_text()?,
+            ))
+          } else {
+            None
+          };
+
+          let filename = format!("{}.yaml", &name);
+          let request_manifest = ApixManifest::new_request(
+            "test".to_string(),
+            name,
+            ApixRequest::new(
+              vec![],
+              indexmap! {},
+              ApixRequestTemplate::new(methods[method].to_string(), url, headers, queries, body),
+            ),
+          );
+          let request_manifest_yaml = serde_yaml::to_string(&request_manifest)?;
+          // save to file with name of request
+          std::fs::write(filename, request_manifest_yaml)?;
+        }
+        Some(("story", _submatches)) => {}
+        _ => {}
+      },
       Some(("init", _submatches)) => {}
       Some(("switch", _submatches)) => {}
       Some(("edit", _submatches)) => {}
