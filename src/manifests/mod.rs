@@ -245,6 +245,49 @@ impl Default for ApixManifest {
 }
 
 impl ApixManifest {
+  // find manifest in current directory
+  pub fn find_filename_of(resource: &str, name: &str) -> Option<String> {
+    // get current directory
+    let current_dir = std::env::current_dir().ok()?;
+    // loop over all files and load them with serde
+    let files = std::fs::read_dir(current_dir).ok()?;
+    for file in files {
+      match file {
+        Ok(file) => {
+          // check if file is a yaml file, in cas of error, continue
+          match (file.path().to_str(), file.file_type().map(|t| t.is_file())) {
+            (Some(path), Ok(true)) => {
+              // check if file is a manifest
+              if path.ends_with(".yaml") || path.ends_with(".yml") {
+                // load file
+                match std::fs::read_to_string(path) {
+                  Ok(content) => match serde_yaml::from_str::<ApixManifest>(&content) {
+                    Ok(manifest) => match manifest {
+                      ApixManifest::V1(manifestv1) => match (manifestv1.kind, resource) {
+                        (ApixKind::Request(_), "request") | (ApixKind::Story(_), "story")
+                          if manifestv1.metadata.name == name =>
+                        {
+                          return Some(path.to_string());
+                        }
+                        _ => {}
+                      },
+                      _ => {}
+                    },
+                    _ => {}
+                  },
+                  _ => {}
+                }
+              }
+            }
+            _ => {}
+          }
+        }
+        _ => {}
+      }
+    }
+    None
+  }
+
   pub fn new_api(name: String, api: Option<ApixApi>) -> Self {
     ApixManifest::V1(ApixManifestV1 {
       metadata: ApixMetadata {

@@ -1,4 +1,5 @@
 mod dialog;
+mod editor;
 mod execute;
 mod http_display;
 mod http_utils;
@@ -14,6 +15,7 @@ use anyhow::{anyhow, Result};
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_complete::{generate, Generator, Shell};
 use cmd_lib::run_cmd;
+use editor::edit_file;
 use execute::handle_execute;
 use http_display::pretty_print;
 use indexmap::indexmap;
@@ -247,12 +249,15 @@ fn build_cli() -> App<'static> {
               Arg::new("resource")
                 .help("resource type to edit")
                 .possible_values(["resource", "context", "story", "request", "config"])
-                .required(true)
                 .index(1),
-              Arg::new("name")
-                .help("name of apix resource to edit")
-                .required(true)
-                .index(2),
+              Arg::new("name").help("name of apix resource to edit").index(2),
+              Arg::new("file")
+                .help("Edit a resource file directly")
+                .short('f')
+                .long("file")
+                .takes_value(true)
+                .value_hint(ValueHint::FilePath)
+                .conflicts_with_all(&["resource", "name"]),
             ]),
           App::new("get")
             .about("get information about an apix resource")
@@ -403,7 +408,22 @@ async fn main() -> Result<()> {
         _ => {}
       },
       Some(("switch", _submatches)) => {}
-      Some(("edit", matches)) => {}
+      Some(("edit", matches)) => {
+        if let Some(filename) = matches.value_of("file") {
+          edit_file(filename)?;
+        } else {
+          let resource = matches.match_or_select("resource", "Resource type", &["request", "story"])?;
+          let name = matches.match_or_input("name", "Resource name")?;
+          match ApixManifest::find_filename_of(&resource, &name) {
+            Some(filename) => {
+              edit_file(&filename)?;
+            }
+            None => {
+              println!("No resource of type {} where found with name {}", resource, name);
+            }
+          }
+        }
+      }
       Some(("get", _submatches)) => {}
       Some(("delete", _submatches)) => {}
       Some(("import", matches)) => {
