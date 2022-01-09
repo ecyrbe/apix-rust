@@ -195,3 +195,14 @@ OPTIONS:
     -q, --query <query>      set query name:value to send with request
     -v, --verbose            print full request and response
 ```
+# Persistance
+
+|   type   | persist mode | gitignore |               description               |
+| :------: | :----------: | :-------: | :-------------------------------------: |
+|  config  |     file     |    no     |             from cli config             |
+| requests |     file     |    no     |
+|  params  |     file     |    yes    |        auto saved from dialoguer        |
+| results  |     file     |    yes    |       auto saved after execution        |
+| cookies  |     file     |    yes    | auto saved after execution, auto reused |
+| storage  |     file     |    yes    |       saved from request response       |
+| secrets  |     web      |    N/A    |          from hashi corp vault          |

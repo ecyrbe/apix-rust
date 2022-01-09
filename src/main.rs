@@ -5,22 +5,24 @@ mod http_utils;
 mod import;
 mod manifests;
 mod match_params;
+mod match_prompts;
 mod progress_component;
 mod requests;
 mod template;
 mod validators;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
-use clap_generate::{generate, Generator, Shell};
-use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
+use clap_complete::{generate, Generator, Shell};
+use cmd_lib::run_cmd;
 use execute::handle_execute;
 use http_display::pretty_print;
 use indexmap::indexmap;
-use indexmap::IndexMap;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequestTemplate};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
+use match_prompts::MatchPrompts;
 use once_cell::sync::Lazy;
 use std::io;
+use std::io::Write;
 use std::string::ToString;
 use validators::{validate_param, validate_url};
 
@@ -99,13 +101,18 @@ fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
 }
 
 fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static CREATE_ARGS: Lazy<[Arg<'static>; 9]> = Lazy::new(|| {
+  static CREATE_ARGS: Lazy<[Arg<'static>; 10]> = Lazy::new(|| {
     [
       Arg::new("name").help("name of request to create").index(1),
+      Arg::new("method")
+        .help("method of request to create")
+        .possible_values(["GET", "POST", "PUT", "DELETE"])
+        .ignore_case(true)
+        .index(2),
       Arg::new("url")
         .help("url to request, can be a 'Tera' template")
         .validator(validate_url)
-        .index(2),
+        .index(3),
       Arg::new("header")
         .short('H')
         .long("header")
@@ -199,6 +206,7 @@ fn build_cli() -> App<'static> {
               .required(true),
           ),
         ]),
+      App::new("init").about("initialise a new API context in the current directory by using git"),
       App::new("history").about("show history of requests sent (require project)"),
       App::new("get").about("get an http resource").args(build_request_args()),
       App::new("head").args(build_request_args()),
@@ -221,6 +229,7 @@ fn build_cli() -> App<'static> {
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .about("apix control interface for handling multiple APIs")
         .subcommands([
+          App::new("switch").about("switch API context"),
           App::new("apply").about("apply an apix manifest into current project"),
           App::new("create")
             .setting(AppSettings::SubcommandRequiredElseHelp)
@@ -232,15 +241,33 @@ fn build_cli() -> App<'static> {
               App::new("story").about("create a new story"),
               // .args(build_create_story_args()),
             ]),
-          App::new("init").about("initialise a new API context"),
-          App::new("switch").about("switch API context"),
-          App::new("edit").about("edit an existing apix resource with current terminal EDITOR"),
+          App::new("edit")
+            .about("edit an existing apix resource with current terminal EDITOR")
+            .args([
+              Arg::new("resource")
+                .help("resource type to edit")
+                .possible_values(["resource", "context", "story", "request", "config"])
+                .required(true)
+                .index(1),
+              Arg::new("name")
+                .help("name of apix resource to edit")
+                .required(true)
+                .index(2),
+            ]),
           App::new("get")
             .about("get information about an apix resource")
-            .arg(Arg::new("resource").possible_values(["resource", "context", "request", "session"])),
-          App::new("delete")
-            .about("delete an existing named resource")
-            .args([Arg::new("resource"), Arg::new("name")]),
+            .arg(Arg::new("resource").possible_values(["resource", "context", "story", "request"])),
+          App::new("delete").about("delete an existing named resource").args([
+            Arg::new("resource")
+              .help("resource type to delete")
+              .possible_values(["resource", "context", "story", "request"])
+              .required(true)
+              .index(1),
+            Arg::new("name")
+              .help("name of apix resource to delete")
+              .required(true)
+              .index(2),
+          ]),
           App::new("import")
             .about("import an OpenAPI description file in yaml or json")
             .arg(
@@ -272,6 +299,25 @@ async fn main() -> Result<()> {
         let mut app = build_cli();
         print_completions(generator, &mut app);
       }
+    }
+    Some(("init", _)) => {
+      run_cmd! {git --version}.map_err(|_| anyhow!("git command not found"))?;
+      // create .gitignore
+      let mut gitignore =
+        std::fs::File::create(".gitignore").map_err(|e| anyhow!("Failed to create .gitignore\ncause: {}", e))?;
+      gitignore
+        .write_all(b".apix/context.yaml\n")
+        .map_err(|e| anyhow!("Failed to write to .gitignore\ncause: {}", e))?;
+      gitignore
+        .flush()
+        .map_err(|e| anyhow!("Failed to save .gitignore\ncause: {}", e))?;
+      // init git
+      run_cmd! {
+        git init
+        git add .gitignore
+        git commit -m "Apix init commit"
+      }
+      .map_err(|e| anyhow!("Failed to init apix repository\ncause: {}", e))?;
     }
     Some(("config", matches)) => match matches.subcommand() {
       Some(("list", _)) => {
@@ -324,73 +370,20 @@ async fn main() -> Result<()> {
     }
     Some(("ctl", matches)) => match matches.subcommand() {
       Some(("apply", _submatches)) => {}
-      Some(("create", submatches)) => match submatches.subcommand() {
-        Some(("request", _submatches)) => {
-          let name = Input::<String>::with_theme(&ColorfulTheme::default())
-            .with_prompt("Request name")
-            .interact_text()?;
+      Some(("create", matches)) => match matches.subcommand() {
+        Some(("request", matches)) => {
+          let name = matches.match_or_input("name", "Request Name")?;
           let methods = ["GET", "POST", "PUT", "DELETE"];
-          let method = Select::with_theme(&ColorfulTheme::default())
-            .with_prompt("Request method")
-            .default(0)
-            .items(&methods)
-            .interact()?;
-          let url = Input::<String>::with_theme(&ColorfulTheme::default())
-            .with_prompt("Request url")
-            .validate_with(|url: &String| {
-              validate_url(&url.to_owned())?;
-              Ok::<(), anyhow::Error>(())
-            })
-            .interact_text()?;
-          // add headers
-          let mut headers = IndexMap::<String, String>::new();
-          loop {
-            let add = Confirm::with_theme(&ColorfulTheme::default())
-              .with_prompt("Add a request header?")
-              .interact()?;
-            if add {
-              let header_name = Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Header name")
-                .interact_text()?;
-              let header_value = Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Header value")
-                .interact_text()?;
-              headers.insert(header_name, header_value);
-            } else {
-              break;
-            }
-          }
-          // add queries
-          let mut queries = IndexMap::<String, String>::new();
-          loop {
-            let add = Confirm::with_theme(&ColorfulTheme::default())
-              .with_prompt("Add a request query?")
-              .interact()?;
-            if add {
-              let query_name = Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Query name")
-                .interact_text()?;
-              let query_value = Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Query value")
-                .interact_text()?;
-              queries.insert(query_name, query_value);
-            } else {
-              break;
-            }
-          }
+          let method = matches.match_or_select("method", "Request method", &methods)?;
+          let url = matches.match_or_validate_input("url", "Request url", |url: &String| {
+            validate_url(&url.to_owned()).map(|_| ())
+          })?;
+          let headers = matches.match_or_input_multiples("header", "Add request headers?")?;
+          let queries = matches.match_or_input_multiples("query", "Add request query parameters?")?;
 
-          let body = if Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Add a request body?")
-            .interact()?
-          {
-            Some(serde_json::Value::String(
-              Input::<String>::with_theme(&ColorfulTheme::default())
-                .with_prompt("Request body")
-                .interact_text()?,
-            ))
-          } else {
-            None
-          };
+          let body = matches
+            .match_or_optional_input("body", "Add a request body?")?
+            .map(|body| serde_json::Value::String(body.to_owned()));
 
           let filename = format!("{}.yaml", &name);
           let request_manifest = ApixManifest::new_request(
@@ -399,7 +392,7 @@ async fn main() -> Result<()> {
             ApixRequest::new(
               vec![],
               indexmap! {},
-              ApixRequestTemplate::new(methods[method].to_string(), url, headers, queries, body),
+              ApixRequestTemplate::new(method.to_string(), url, headers, queries, body),
             ),
           );
           let request_manifest_yaml = serde_yaml::to_string(&request_manifest)?;
@@ -409,9 +402,8 @@ async fn main() -> Result<()> {
         Some(("story", _submatches)) => {}
         _ => {}
       },
-      Some(("init", _submatches)) => {}
       Some(("switch", _submatches)) => {}
-      Some(("edit", _submatches)) => {}
+      Some(("edit", matches)) => {}
       Some(("get", _submatches)) => {}
       Some(("delete", _submatches)) => {}
       Some(("import", matches)) => {
