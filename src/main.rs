@@ -90,14 +90,17 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
 }
 
 fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static EXEC_ARGS: Lazy<[Arg<'static>; 1]> = Lazy::new(|| {
-    [Arg::new("file")
-      .help("path to the manifest file request to execute")
-      .short('f')
-      .long("file")
-      .required(true)
-      .takes_value(true)
-      .value_hint(ValueHint::FilePath)]
+  static EXEC_ARGS: Lazy<[Arg<'static>; 2]> = Lazy::new(|| {
+    [
+      Arg::new("name").help("name of the request to execute").index(1),
+      Arg::new("file")
+        .help("Execute a manifest file request directly")
+        .short('f')
+        .long("file")
+        .takes_value(true)
+        .value_hint(ValueHint::FilePath)
+        .conflicts_with("name"),
+    ]
   });
   EXEC_ARGS.iter()
 }
@@ -371,6 +374,17 @@ async fn main() -> Result<()> {
         let content = std::fs::read_to_string(file)?;
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
         handle_execute(file, &manifest, &theme, matches.is_present("verbose")).await?;
+      } else if let Ok(name) = matches.match_or_input("name", "Request name") {
+        match ApixManifest::find_filename_of("request", &name) {
+          Some(filename) => {
+            let content = std::fs::read_to_string(&filename)?;
+            let manifest: ApixManifest = serde_yaml::from_str(&content)?;
+            handle_execute(&filename, &manifest, &theme, matches.is_present("verbose")).await?;
+          }
+          None => {
+            println!("No request where found with name {}", name);
+          }
+        }
       }
     }
     Some(("ctl", matches)) => match matches.subcommand() {
