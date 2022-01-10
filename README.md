@@ -59,7 +59,8 @@ Coming soon:
 ## help
 
 ```bash
-apix 0.1.0
+apix 0.3.0
+
 
 USAGE:
     apix [OPTIONS] <SUBCOMMAND>
@@ -76,9 +77,10 @@ SUBCOMMANDS:
     delete         delete an http resource
     exec           execute a request from the current API context
     get            get an http resource
-    head           get an http resource
+    head           get an http resource header
     help           Print this message or the help of the given subcommand(s)
     history        show history of requests sent (require project)
+    init           initialise a new API context in the current directory by using git
     patch          patch an http resource
     post           post to an http resource
     put            put to an http resource

@@ -214,7 +214,9 @@ fn build_cli() -> App<'static> {
       App::new("init").about("initialise a new API context in the current directory by using git"),
       App::new("history").about("show history of requests sent (require project)"),
       App::new("get").about("get an http resource").args(build_request_args()),
-      App::new("head").args(build_request_args()),
+      App::new("head")
+        .about("get an http resource header")
+        .args(build_request_args()),
       App::new("post")
         .about("post to an http resource")
         .args(build_request_args()),
