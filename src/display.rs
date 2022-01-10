@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::http_utils::Language;
 use anyhow::Result;
 use bat::{Input, PrettyPrinter};
@@ -13,6 +15,19 @@ pub fn pretty_print(content: &[u8], theme: &str, language: &str) -> Result<()> {
     .input(Input::from_reader(content))
     .language(language)
     .theme(theme)
+    .print()
+    .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
+  Ok(())
+}
+
+pub fn pretty_print_file(path: PathBuf, theme: &str, language: &str) -> Result<()> {
+  PrettyPrinter::new()
+    .input_file(path)
+    .language(language)
+    .theme(theme)
+    .grid(true)
+    .header(true)
+    .line_numbers(true)
     .print()
     .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
   Ok(())

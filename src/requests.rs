@@ -1,4 +1,4 @@
-use super::http_display::{pretty_print, HttpDisplay};
+use super::display::{pretty_print, HttpDisplay};
 use super::http_utils::Language;
 use super::progress_component::FileProgressComponent;
 use anyhow::Result;

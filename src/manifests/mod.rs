@@ -1,9 +1,13 @@
+use std::path::{Path, PathBuf};
+
 pub use self::config::ApixConfiguration;
 pub mod config;
 
+use anyhow::Result;
 use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use strum_macros::Display as EnumDisplay;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct ApixApi {
@@ -195,7 +199,7 @@ impl ApixRequest {
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumDisplay)]
 #[serde(tag = "kind", content = "spec")]
 pub enum ApixKind {
   Api(ApixApi),
@@ -245,47 +249,57 @@ impl Default for ApixManifest {
 }
 
 impl ApixManifest {
-  // find manifest in current directory
-  pub fn find_filename_of(resource: &str, name: &str) -> Option<String> {
-    // get current directory
-    let current_dir = std::env::current_dir().ok()?;
-    // loop over all files and load them with serde
-    let files = std::fs::read_dir(current_dir).ok()?;
-    for file in files {
-      match file {
-        Ok(file) => {
-          // check if file is a yaml file, in cas of error, continue
-          match (file.path().to_str(), file.file_type().map(|t| t.is_file())) {
-            (Some(path), Ok(true)) => {
-              // check if file is a manifest
-              if path.ends_with(".yaml") || path.ends_with(".yml") {
-                // load file
-                match std::fs::read_to_string(path) {
-                  Ok(content) => match serde_yaml::from_str::<ApixManifest>(&content) {
-                    Ok(manifest) => match manifest {
-                      ApixManifest::V1(manifestv1) => match (manifestv1.kind, resource) {
-                        (ApixKind::Request(_), "request") | (ApixKind::Story(_), "story")
-                          if manifestv1.metadata.name == name =>
-                        {
-                          return Some(path.to_string());
-                        }
-                        _ => {}
-                      },
-                      _ => {}
-                    },
-                    _ => {}
-                  },
-                  _ => {}
+  pub fn find_manifests() -> Result<impl Iterator<Item = (PathBuf, ApixManifest)>> {
+    let current_dir = std::env::current_dir()?;
+    let manifests = std::fs::read_dir(current_dir)?.filter_map(|entry| {
+      match entry {
+        Ok(entry) => {
+          let path = entry.path();
+          if path.is_file() {
+            match path.extension() {
+              Some(ext) if ext == "yaml" || ext == "yml" => {
+                if let Ok(manifest) = ApixManifest::from_file(&path) {
+                  return Some((path, manifest));
                 }
               }
+              _ => {}
             }
-            _ => {}
           }
         }
         _ => {}
       }
-    }
-    None
+      None
+    });
+    Ok(manifests)
+  }
+
+  pub fn find_manifests_by_kind(kind: &str) -> Result<impl Iterator<Item = (PathBuf, ApixManifest)> + '_> {
+    Self::find_manifests().map(move |manifests| {
+      manifests.filter(move |(_, manifest)| match manifest {
+        ApixManifest::V1(manifestv1) => manifestv1.kind.to_string().to_lowercase() == kind,
+        _ => false,
+      })
+    })
+  }
+
+  pub fn find_manifest(kind: &str, name: &str) -> Option<(PathBuf, ApixManifest)> {
+    Self::find_manifests()
+      .ok()
+      .map(|mut manifests| {
+        manifests.find(|(_, manifest)| match manifest {
+          ApixManifest::V1(manifest) => {
+            manifest.kind.to_string().to_lowercase() == kind && manifest.metadata.name == name
+          }
+          _ => false,
+        })
+      })
+      .flatten()
+  }
+
+  pub fn find_manifest_filename(kind: &str, name: &str) -> Option<String> {
+    Self::find_manifest(kind, name)
+      .map(|(path, _)| path.to_str().map(|s| s.to_string()))
+      .flatten()
   }
 
   pub fn new_api(name: String, api: Option<ApixApi>) -> Self {
@@ -337,6 +351,12 @@ impl ApixManifest {
       },
       kind: ApixKind::Story(stories),
     })
+  }
+
+  pub fn from_file(path: &Path) -> Result<Self> {
+    let content = std::fs::read_to_string(path)?;
+    let manifest = serde_yaml::from_str::<ApixManifest>(&content)?;
+    Ok(manifest)
   }
 
   pub fn name(&self) -> &str {

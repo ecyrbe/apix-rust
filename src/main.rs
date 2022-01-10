@@ -1,7 +1,7 @@
 mod dialog;
+mod display;
 mod editor;
 mod execute;
-mod http_display;
 mod http_utils;
 mod import;
 mod manifests;
@@ -15,9 +15,9 @@ use anyhow::{anyhow, Result};
 use clap::{crate_authors, crate_version, App, AppSettings, Arg, ValueHint};
 use clap_complete::{generate, Generator, Shell};
 use cmd_lib::run_cmd;
+use display::{pretty_print, pretty_print_file};
 use editor::edit_file;
 use execute::handle_execute;
-use http_display::pretty_print;
 use indexmap::indexmap;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequestTemplate};
 use match_params::{match_body, match_headers, match_queries, RequestParam};
@@ -262,9 +262,12 @@ fn build_cli() -> App<'static> {
                 .value_hint(ValueHint::FilePath)
                 .conflicts_with_all(&["resource", "name"]),
             ]),
-          App::new("get")
-            .about("get information about an apix resource")
-            .arg(Arg::new("resource").possible_values(["resource", "context", "story", "request"])),
+          App::new("get").about("get information about an apix resource").args([
+            Arg::new("resource")
+              .possible_values(["resource", "context", "story", "request"])
+              .index(1),
+            Arg::new("name").help("name of apix resource to edit").index(2),
+          ]),
           App::new("delete").about("delete an existing named resource").args([
             Arg::new("resource")
               .help("resource type to delete")
@@ -375,11 +378,10 @@ async fn main() -> Result<()> {
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
         handle_execute(file, &manifest, &theme, matches.is_present("verbose")).await?;
       } else if let Ok(name) = matches.match_or_input("name", "Request name") {
-        match ApixManifest::find_filename_of("request", &name) {
-          Some(filename) => {
-            let content = std::fs::read_to_string(&filename)?;
-            let manifest: ApixManifest = serde_yaml::from_str(&content)?;
-            handle_execute(&filename, &manifest, &theme, matches.is_present("verbose")).await?;
+        match ApixManifest::find_manifest("request", &name) {
+          Some((path, manifest)) => {
+            let path = path.to_str().ok_or(anyhow!("Invalid path"))?;
+            handle_execute(&path, &manifest, &theme, matches.is_present("verbose")).await?;
           }
           None => {
             println!("No request where found with name {}", name);
@@ -428,7 +430,7 @@ async fn main() -> Result<()> {
         } else {
           let resource = matches.match_or_select("resource", "Resource type", &["request", "story"])?;
           let name = matches.match_or_input("name", "Resource name")?;
-          match ApixManifest::find_filename_of(&resource, &name) {
+          match ApixManifest::find_manifest_filename(&resource, &name) {
             Some(filename) => {
               edit_file(&filename)?;
             }
@@ -438,7 +440,30 @@ async fn main() -> Result<()> {
           }
         }
       }
-      Some(("get", _submatches)) => {}
+      Some(("get", matches)) => {
+        if let Some(kind) = matches.value_of("resource") {
+          if let Some(name) = matches.value_of("name") {
+            if let Some((path, _)) = ApixManifest::find_manifest(kind, name) {
+              pretty_print_file(path, &theme, "yaml")?;
+            } else {
+              println!("No resource of type {} where found with name {}", kind, name);
+            }
+          } else {
+            if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
+              let mut printed = false;
+              for (path, _) in manifests {
+                pretty_print_file(path, &theme, "yaml")?;
+                printed = true;
+              }
+              if !printed {
+                println!("No resources of type {} where found", kind);
+              }
+            } else {
+              println!("No resources of type {} where found", kind);
+            }
+          }
+        }
+      }
       Some(("delete", _submatches)) => {}
       Some(("import", matches)) => {
         if let Some(url) = matches.value_of("url") {
