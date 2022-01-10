@@ -15,7 +15,8 @@ impl FileProgress {
     let progress = ProgressBar::new(size_hint);
     progress.set_style(ProgressStyle::default_bar().template(
       "{msg} - {percent}%\n{spinner:.green} [{elapsed_precise}] {wide_bar:.cyan/blue} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})",
-    ));
+    ).tick_chars("🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛"));
+    progress.set_draw_rate(6);
     Self { path, progress }
   }
 }

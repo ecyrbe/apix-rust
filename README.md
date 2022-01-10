@@ -17,8 +17,8 @@
   </a>
 </p>
 
-```diff
-- WARNING: Apix is still in alpha/proof of concept state! Interface might brake -
+```yaml
+🚨 WARNING: 🚧 Apix is still in alpha/proof of concept state! 🚧
 ```
 
 Apix brings ideas from tools like `Git`,`Kubernetes`, `Helm` ,`Httpie`.
@@ -35,7 +35,7 @@ Indeed it's is not just a simple HTTP client, Apix is :
 ```bash
 > apix get https://apix.io/test.mp4
 Downloading File test.mp4
-⠙ [00:00:28] [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.98MiB/298.06MiB (549.87KiB/s, 8m)
+🕘 [00:00:28] [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.98MiB/298.06MiB (549.87KiB/s, 8m)
 ```
 - **Friendly** to use as it uses [Dialoguer](https://docs.rs/dialoguer/latest/dialoguer/index.html) for interactive prompt to guide you when creating requests or executing them
 ```bash
