@@ -28,7 +28,7 @@ impl ValueTemplate for Tera {
       }
       Value::String(content) => {
         self.add_raw_template(name, content)?;
-        let new_content = self.render(&name, context)?;
+        let new_content = self.render(name, context)?;
         Ok(Value::String(new_content))
       }
       _ => Ok(value.clone()),

@@ -102,7 +102,7 @@ impl MatchPrompts for ArgMatches {
       None => {
         let select = Select::with_theme(&ColorfulTheme::default())
           .with_prompt(msg)
-          .items(&options)
+          .items(options)
           .interact()?;
         Ok(options[select].to_string())
       }

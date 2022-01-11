@@ -392,7 +392,6 @@ impl ApixManifest {
     match self {
       ApixManifest::V1(manifest) => {
         manifest.metadata.extensions.insert(key, value);
-        ()
       }
       ApixManifest::None => (),
     }

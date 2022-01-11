@@ -292,7 +292,7 @@ fn build_cli() -> App<'static> {
     ])
 }
 
-async fn handle_import(url: &str) -> Result<()> {
+async fn handle_import(_url: &str) -> Result<()> {
   // let open_api = reqwest::get(url).await?.text().await?;
   // let result = import::import_api(open_api, import::OpenApiType::YAML)
   //     .await
@@ -406,7 +406,7 @@ async fn main() -> Result<()> {
 
           let body = matches
             .match_or_optional_input("body", "Add a request body?")?
-            .map(|body| serde_json::Value::String(body));
+            .map(serde_json::Value::String);
 
           let filename = format!("{}.yaml", &name);
           let request_manifest = ApixManifest::new_request(
@@ -415,7 +415,7 @@ async fn main() -> Result<()> {
             ApixRequest::new(
               vec![],
               indexmap! {},
-              ApixRequestTemplate::new(method.to_string(), url, headers, queries, body),
+              ApixRequestTemplate::new(method, url, headers, queries, body),
             ),
           );
           let request_manifest_yaml = serde_yaml::to_string(&request_manifest)?;
@@ -450,19 +450,17 @@ async fn main() -> Result<()> {
             } else {
               println!("No resource of type {} where found with name {}", kind, name);
             }
-          } else {
-            if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
-              let mut printed = false;
-              for (path, _) in manifests {
-                pretty_print_file(path, &theme, "yaml")?;
-                printed = true;
-              }
-              if !printed {
-                println!("No resources of type {} where found", kind);
-              }
-            } else {
+          } else if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
+            let mut printed = false;
+            for (path, _) in manifests {
+              pretty_print_file(path, &theme, "yaml")?;
+              printed = true;
+            }
+            if !printed {
               println!("No resources of type {} where found", kind);
             }
+          } else {
+            println!("No resources of type {} where found", kind);
           }
         }
       }

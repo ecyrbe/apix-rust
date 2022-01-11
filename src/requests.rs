@@ -66,7 +66,7 @@ pub async fn make_request(
   let client = Client::builder().gzip(true).build()?;
   let mut builder = client.request(Method::from_str(&method.to_uppercase())?, url);
   if let Some(headers) = headers {
-    builder = builder.headers(merge_with_defaults(&headers))
+    builder = builder.headers(merge_with_defaults(headers))
   } else {
     builder = builder.headers(DEFAULT_HEADERS.clone())
   }
@@ -95,12 +95,12 @@ pub async fn make_request(
   }
   let req = builder.build()?;
   if verbose {
-    req.print(&theme)?;
+    req.print(theme)?;
     println!();
   }
   let result = client.execute(req).await?;
   if verbose {
-    result.print(&theme)?;
+    result.print(theme)?;
     println!();
   }
   let language = result.get_language();
@@ -126,7 +126,7 @@ pub async fn make_request(
   } else {
     let response_body = result.text().await?;
     if !response_body.is_empty() {
-      pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
+      pretty_print(response_body.as_bytes(), theme, language.unwrap_or_default())?;
       println!();
     }
   }

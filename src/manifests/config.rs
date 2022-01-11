@@ -49,7 +49,7 @@ impl ApixConfiguration {
   fn load_from_string(content: &str, err_msg: &str) -> Result<Self> {
     if !content.is_empty() {
       let manifest: ApixManifest =
-        serde_yaml::from_str(&content).map_err(|e| anyhow::anyhow!("Could not parse {}: {:#}", &err_msg, e))?;
+        serde_yaml::from_str(content).map_err(|e| anyhow::anyhow!("Could not parse {}: {:#}", &err_msg, e))?;
       return match manifest.kind() {
         ApixKind::Configuration(conf) => {
           let mut config = conf.clone();

@@ -6,7 +6,7 @@ use serde_json::Value;
 
 fn input_to_value(input: &str) -> Value {
   // safe to unwrap because we always return an Ok value
-  serde_json::from_str(&input)
+  serde_json::from_str(input)
     .or::<serde_json::Error>(Ok(Value::String(input.to_string())))
     .unwrap()
 }

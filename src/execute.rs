@@ -46,7 +46,7 @@ impl<'a> RequestTemplate<'a> {
   fn new(manifest: &'a ApixManifest, file: String) -> Result<Self> {
     match manifest.kind() {
       ApixKind::Request(request) => {
-        let parameters = Value::Object(ask_for_required_parameters(&request)?);
+        let parameters = Value::Object(ask_for_required_parameters(request)?);
         let env: HashMap<String, String> = std::env::vars().collect();
         let engine = Tera::default();
         let mut context = Context::new();
