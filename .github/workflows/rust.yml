@@ -51,7 +51,7 @@ jobs:
           args: --all -- -D warnings
       - name: test
         if: contains(matrix.config.do, 'test')
-        uses: actions-rs/tarpaulin@v0.1
+        uses: actions-rs/cargo@v1
         with:
-          version: "0.15.0"
-          args: "--workspace --out Lcov --output-dir ./coverage --exclude-files */target/*"
+          command: test
+          args: --verbose
