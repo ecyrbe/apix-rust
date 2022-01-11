@@ -24,10 +24,12 @@ impl FromStr for HeaderTuple {
   fn from_str(header_string: &str) -> Result<Self, Self::Err> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
 
-    let header_split = RE.captures(header_string).ok_or(anyhow::anyhow!(
-      "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
-      header_string
-    ))?;
+    let header_split = RE.captures(header_string).ok_or_else(|| {
+      anyhow::anyhow!(
+        "Bad header format: \"{}\", should be of the form \"<name>:<value>\"",
+        header_string
+      )
+    })?;
     Ok(HeaderTuple(
       HeaderName::from_str(&header_split[1])?,
       HeaderValue::from_str(&header_split[2])?,
@@ -44,10 +46,12 @@ impl FromStr for QueryTuple {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
 
     let query = query_string.to_string();
-    let header_split = RE.captures(&query).ok_or(anyhow::anyhow!(
-      "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
-      query_string
-    ))?;
+    let header_split = RE.captures(&query).ok_or_else(|| {
+      anyhow::anyhow!(
+        "Bad query format: \"{}\", should be of the form \"<name>:<value>\"",
+        query_string
+      )
+    })?;
     Ok(QueryTuple(header_split[1].to_string(), header_split[2].to_string()))
   }
 }

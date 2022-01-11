@@ -43,7 +43,7 @@ impl HttpDisplay for Request {
       host = self
         .url()
         .host_str()
-        .ok_or(anyhow::anyhow!("invalid host in URL: {}", self.url()))?
+        .ok_or_else(|| anyhow::anyhow!("invalid host in URL: {}", self.url()))?
     );
     for (key, value) in self.headers() {
       output.push_str(&format!("{}: {}\n", key.as_str(), value.to_str()?));
@@ -51,14 +51,12 @@ impl HttpDisplay for Request {
     pretty_print(output.as_bytes(), theme, "yaml")?;
 
     // pretty print body if present and it has a content type that match a language
-    match (self.body(), self.get_language()) {
-      (Some(body), Some(language)) => {
-        println!();
-        pretty_print(body.as_bytes().unwrap_or(String::new().as_bytes()), theme, language)?;
+    if let (Some(body), Some(language)) = (self.body(), self.get_language()) {
+      println!();
+      if let Some(bytes) = body.as_bytes() {
+        pretty_print(bytes, theme, language)?;
       }
-      _ => {}
     }
-
     Ok(())
   }
 }

@@ -37,7 +37,7 @@ impl ApixConfiguration {
   }
 
   // private function to load apix configuration from file when given a path
-  fn load_from_path(path: &std::path::PathBuf) -> Result<Self> {
+  fn load_from_path(path: &std::path::Path) -> Result<Self> {
     if let Ok(content) = fs::read_to_string(path) {
       Self::load_from_string(&content, &format!("config file {:?}", &path))
     } else {
@@ -63,7 +63,7 @@ impl ApixConfiguration {
   }
 
   // private method to save apix configuration to file when given a path
-  fn save_to_path(&self, path: &std::path::PathBuf) -> Result<()> {
+  fn save_to_path(&self, path: &std::path::Path) -> Result<()> {
     let manifest = ApixManifest::new_configuration(Some(self.clone()));
     let file = serde_yaml::to_string(&manifest)?;
     fs::write(path, file)?;

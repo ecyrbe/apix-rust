@@ -340,8 +340,8 @@ async fn main() -> Result<()> {
           "yaml",
         )?;
       }
-      Some(("set", matches)) => match (matches.value_of("name"), matches.value_of("value")) {
-        (Some(key), Some(value)) => {
+      Some(("set", matches)) => {
+        if let (Some(key), Some(value)) = (matches.value_of("name"), matches.value_of("value")) {
           if let Some(old_value) = ApixConfiguration::once().set(key.to_string(), value.to_string()) {
             println!("Replaced config key");
             pretty_print(
@@ -355,8 +355,7 @@ async fn main() -> Result<()> {
           }
           ApixConfiguration::once().save()?;
         }
-        _ => {}
-      },
+      }
       Some(("get", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().get(key) {
@@ -382,7 +381,7 @@ async fn main() -> Result<()> {
       } else if let Ok(name) = matches.match_or_input("name", "Request name") {
         match ApixManifest::find_manifest("request", &name) {
           Some((path, manifest)) => {
-            let path = path.to_str().ok_or(anyhow!("Invalid path"))?;
+            let path = path.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
             handle_execute(path, &manifest, &theme, matches.is_present("verbose")).await?;
           }
           None => {

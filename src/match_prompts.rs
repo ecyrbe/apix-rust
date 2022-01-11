@@ -47,8 +47,12 @@ impl MatchPrompts for ArgMatches {
         let mut map = IndexMap::new();
         for value in values {
           let mut parts = value.splitn(2, ':');
-          let key = parts.next().ok_or(anyhow::anyhow!("No key found in '{}'", value))?;
-          let value = parts.next().ok_or(anyhow::anyhow!("No value found in '{}'", value))?;
+          let key = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("No key found in '{}'", value))?;
+          let value = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("No value found in '{}'", value))?;
           map.insert(key.to_string(), value.to_string());
         }
         Ok(map)

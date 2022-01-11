@@ -17,6 +17,7 @@ pub struct ApixApi {
 }
 
 impl ApixApi {
+  #[allow(dead_code)]
   pub fn new(url: String, version: String, description: Option<String>) -> Self {
     Self {
       url,
@@ -28,10 +29,6 @@ impl ApixApi {
 
 fn default_schema() -> Option<Value> {
   Some(json!({ "type": "string" }))
-}
-
-fn is_default<T: Default + PartialEq>(t: &T) -> bool {
-  *t == Default::default()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -47,6 +44,7 @@ pub struct ApixParameter {
 }
 
 impl ApixParameter {
+  #[allow(dead_code)]
   pub fn new(name: String, required: bool, password: bool, description: Option<String>, schema: Option<Value>) -> Self {
     Self {
       name,
@@ -199,6 +197,7 @@ impl ApixRequest {
   }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumDisplay)]
 #[serde(tag = "kind", content = "spec")]
 pub enum ApixKind {
@@ -234,6 +233,7 @@ pub struct ApixManifestV1 {
   kind: ApixKind,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "apiVersion")]
 pub enum ApixManifest {
@@ -252,21 +252,18 @@ impl ApixManifest {
   pub fn find_manifests() -> Result<impl Iterator<Item = (PathBuf, ApixManifest)>> {
     let current_dir = std::env::current_dir()?;
     let manifests = std::fs::read_dir(current_dir)?.filter_map(|entry| {
-      match entry {
-        Ok(entry) => {
-          let path = entry.path();
-          if path.is_file() {
-            match path.extension() {
-              Some(ext) if ext == "yaml" || ext == "yml" => {
-                if let Ok(manifest) = ApixManifest::from_file(&path) {
-                  return Some((path, manifest));
-                }
+      if let Ok(entry) = entry {
+        let path = entry.path();
+        if path.is_file() {
+          match path.extension() {
+            Some(ext) if ext == "yaml" || ext == "yml" => {
+              if let Ok(manifest) = ApixManifest::from_file(&path) {
+                return Some((path, manifest));
               }
-              _ => {}
             }
+            _ => {}
           }
         }
-        _ => {}
       }
       None
     });
@@ -302,6 +299,7 @@ impl ApixManifest {
       .flatten()
   }
 
+  #[allow(dead_code)]
   pub fn new_api(name: String, api: Option<ApixApi>) -> Self {
     ApixManifest::V1(ApixManifestV1 {
       metadata: ApixMetadata {
@@ -335,6 +333,7 @@ impl ApixManifest {
     })
   }
 
+  #[allow(dead_code)]
   pub fn new_stories(api: String, name: String, stories: ApixStories) -> Self {
     ApixManifest::V1(ApixManifestV1 {
       metadata: ApixMetadata {
@@ -359,6 +358,7 @@ impl ApixManifest {
     Ok(manifest)
   }
 
+  #[allow(dead_code)]
   pub fn name(&self) -> &str {
     match self {
       ApixManifest::V1(manifest) => &manifest.metadata.name,
@@ -381,13 +381,15 @@ impl ApixManifest {
     }
   }
 
-  pub fn get_metadata(&self, key: &String) -> Option<&String> {
+  #[allow(dead_code)]
+  pub fn get_metadata(&self, key: &str) -> Option<&String> {
     match self {
       ApixManifest::V1(manifest) => manifest.metadata.extensions.get(key),
       ApixManifest::None => None,
     }
   }
 
+  #[allow(dead_code)]
   pub fn insert_metadata(&mut self, key: String, value: String) {
     match self {
       ApixManifest::V1(manifest) => {
@@ -397,14 +399,16 @@ impl ApixManifest {
     }
   }
 
-  pub fn get_annotation(&self, key: &String) -> Option<&String> {
+  #[allow(dead_code)]
+  pub fn get_annotation(&self, key: &str) -> Option<&String> {
     match self {
       ApixManifest::V1(manifest) => manifest.metadata.annotations.get(key),
       ApixManifest::None => None,
     }
   }
 
-  pub fn get_label(&self, key: &String) -> Option<&String> {
+  #[allow(dead_code)]
+  pub fn get_label(&self, key: &str) -> Option<&String> {
     match self {
       ApixManifest::V1(manifest) => manifest.metadata.labels.get(key),
       ApixManifest::None => None,
