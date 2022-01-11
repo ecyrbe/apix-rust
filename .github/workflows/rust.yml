@@ -2,21 +2,56 @@ name: Rust
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - do: check format clippy test
+            os: ubuntu-latest
+          - do: check test
+            os: windows-latest
+          - do: check test
+            os: macos-latest
+    runs-on: ${{ matrix.config.os }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: clippy, rustfmt
+          default: true
+      - name: check code
+        if: contains(matrix.config.do, 'check')
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+      - name: check format
+        if: contains(matrix.config.do, 'format')
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: static code analysis
+        if: contains(matrix.config.do, 'clippy')
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all -- -D warnings
+      - name: test
+        if: contains(matrix.config.do, 'test')
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: "0.15.0"
+          args: "--workspace --out Lcov --output-dir ./coverage --exclude-files */target/*"
