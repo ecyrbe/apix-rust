@@ -4,11 +4,11 @@ use dialoguer::{theme::ColorfulTheme, Input, Password};
 use jsonschema::{Draft, JSONSchema};
 use serde_json::Value;
 
-fn input_to_value(input: &String) -> Value {
+fn input_to_value(input: &str) -> Value {
   // safe to unwrap because we always return an Ok value
-  return serde_json::from_str(&input)
-    .or::<serde_json::Error>(Ok(Value::String(input.clone())))
-    .unwrap();
+  serde_json::from_str(&input)
+    .or::<serde_json::Error>(Ok(Value::String(input.to_string())))
+    .unwrap()
 }
 
 pub trait Dialog {

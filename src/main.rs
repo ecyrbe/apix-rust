@@ -383,7 +383,7 @@ async fn main() -> Result<()> {
         match ApixManifest::find_manifest("request", &name) {
           Some((path, manifest)) => {
             let path = path.to_str().ok_or(anyhow!("Invalid path"))?;
-            handle_execute(&path, &manifest, &theme, matches.is_present("verbose")).await?;
+            handle_execute(path, &manifest, &theme, matches.is_present("verbose")).await?;
           }
           None => {
             println!("No request where found with name {}", name);
@@ -406,7 +406,7 @@ async fn main() -> Result<()> {
 
           let body = matches
             .match_or_optional_input("body", "Add a request body?")?
-            .map(|body| serde_json::Value::String(body.to_owned()));
+            .map(|body| serde_json::Value::String(body));
 
           let filename = format!("{}.yaml", &name);
           let request_manifest = ApixManifest::new_request(
@@ -477,8 +477,8 @@ async fn main() -> Result<()> {
     Some((method, matches)) => {
       if let Some(url) = matches.value_of("url") {
         requests::make_request(
-          &url,
-          &method,
+          url,
+          method,
           match_headers(matches).as_ref(),
           match_queries(matches).as_ref(),
           match_body(matches)?,

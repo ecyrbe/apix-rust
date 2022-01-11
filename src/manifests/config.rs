@@ -72,7 +72,7 @@ impl ApixConfiguration {
 
   // private method to set default values for apix configuration
   fn set_defaults(&mut self) {
-    if let None = self.get("theme") {
+    if self.get("theme").is_none() {
       self.set("theme".to_string(), "Monokai Extended".to_string());
     }
   }

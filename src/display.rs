@@ -53,7 +53,7 @@ impl HttpDisplay for Request {
     // pretty print body if present and it has a content type that match a language
     match (self.body(), self.get_language()) {
       (Some(body), Some(language)) => {
-        println!("");
+        println!();
         pretty_print(body.as_bytes().unwrap_or(String::new().as_bytes()), theme, language)?;
       }
       _ => {}

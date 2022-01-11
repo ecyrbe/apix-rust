@@ -96,12 +96,12 @@ pub async fn make_request(
   let req = builder.build()?;
   if verbose {
     req.print(&theme)?;
-    println!("");
+    println!();
   }
   let result = client.execute(req).await?;
   if verbose {
     result.print(&theme)?;
-    println!("");
+    println!();
   }
   let language = result.get_language();
   if let Some("binary") = language {
@@ -127,7 +127,7 @@ pub async fn make_request(
     let response_body = result.text().await?;
     if !response_body.is_empty() {
       pretty_print(response_body.as_bytes(), &theme, language.unwrap_or_default())?;
-      println!("");
+      println!();
     }
   }
   Ok(())
