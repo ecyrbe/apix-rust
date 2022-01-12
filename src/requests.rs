@@ -62,6 +62,7 @@ pub async fn make_request(
   body: AdvancedBody,
   verbose: bool,
   theme: &str,
+  enable_color: bool,
 ) -> Result<()> {
   let client = Client::builder().gzip(true).build()?;
   let mut builder = client.request(Method::from_str(&method.to_uppercase())?, url);
@@ -95,12 +96,12 @@ pub async fn make_request(
   }
   let req = builder.build()?;
   if verbose {
-    req.print(theme)?;
+    req.print(theme, enable_color)?;
     println!();
   }
   let result = client.execute(req).await?;
   if verbose {
-    result.print(theme)?;
+    result.print(theme, enable_color)?;
     println!();
   }
   let language = result.get_language();
@@ -126,7 +127,12 @@ pub async fn make_request(
   } else {
     let response_body = result.text().await?;
     if !response_body.is_empty() {
-      pretty_print(response_body.as_bytes(), theme, language.unwrap_or_default())?;
+      pretty_print(
+        response_body.as_bytes(),
+        theme,
+        language.unwrap_or_default(),
+        enable_color,
+      )?;
       println!();
     }
   }

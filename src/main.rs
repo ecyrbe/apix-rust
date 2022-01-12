@@ -303,6 +303,7 @@ async fn handle_import(_url: &str) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+  let enable_color = atty::is(atty::Stream::Stdout);
   let matches = build_cli().get_matches();
   // read config file
   let theme = ApixConfiguration::once().get("theme").unwrap().clone();
@@ -338,6 +339,7 @@ async fn main() -> Result<()> {
           serde_yaml::to_string(ApixConfiguration::once())?.as_bytes(),
           &theme,
           "yaml",
+          enable_color,
         )?;
       }
       Some(("set", matches)) => {
@@ -348,10 +350,11 @@ async fn main() -> Result<()> {
               format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
               &theme,
               "diff",
+              enable_color,
             )?;
           } else {
             println!("Set config key");
-            pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+            pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
           }
           ApixConfiguration::once().save()?;
         }
@@ -359,14 +362,14 @@ async fn main() -> Result<()> {
       Some(("get", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().get(key) {
-          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
         }
       }
       Some(("delete", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().delete(key) {
           println!("Deleted config key");
-          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml")?;
+          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
           ApixConfiguration::once().save()?;
         }
       }
@@ -377,12 +380,12 @@ async fn main() -> Result<()> {
       if let Some(file) = matches.value_of("file") {
         let content = std::fs::read_to_string(file)?;
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
-        handle_execute(file, &manifest, &theme, matches.is_present("verbose")).await?;
+        handle_execute(file, &manifest, &theme, enable_color, matches.is_present("verbose")).await?;
       } else if let Ok(name) = matches.match_or_input("name", "Request name") {
         match ApixManifest::find_manifest("request", &name) {
           Some((path, manifest)) => {
             let path = path.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
-            handle_execute(path, &manifest, &theme, matches.is_present("verbose")).await?;
+            handle_execute(path, &manifest, &theme, enable_color, matches.is_present("verbose")).await?;
           }
           None => {
             println!("No request where found with name {}", name);
@@ -445,14 +448,14 @@ async fn main() -> Result<()> {
         if let Some(kind) = matches.value_of("resource") {
           if let Some(name) = matches.value_of("name") {
             if let Some((path, _)) = ApixManifest::find_manifest(kind, name) {
-              pretty_print_file(path, &theme, "yaml")?;
+              pretty_print_file(path, &theme, "yaml", enable_color)?;
             } else {
               println!("No resource of type {} where found with name {}", kind, name);
             }
           } else if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
             let mut printed = false;
             for (path, _) in manifests {
-              pretty_print_file(path, &theme, "yaml")?;
+              pretty_print_file(path, &theme, "yaml", enable_color)?;
               printed = true;
             }
             if !printed {
@@ -481,6 +484,7 @@ async fn main() -> Result<()> {
           match_body(matches)?,
           matches.is_present("verbose"),
           &theme,
+          enable_color,
         )
         .await?;
       }

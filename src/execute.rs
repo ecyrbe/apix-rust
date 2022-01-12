@@ -173,7 +173,13 @@ impl<'a> RequestTemplate<'a> {
   }
 }
 
-pub async fn handle_execute(file: &str, manifest: &ApixManifest, theme: &str, verbose: bool) -> Result<()> {
+pub async fn handle_execute(
+  file: &str,
+  manifest: &ApixManifest,
+  theme: &str,
+  enable_color: bool,
+  verbose: bool,
+) -> Result<()> {
   let params = RequestTemplate::new(manifest, file.to_string())?
     .render_context()?
     .render_request_params()?;
@@ -185,6 +191,7 @@ pub async fn handle_execute(file: &str, manifest: &ApixManifest, theme: &str, ve
     params.body,
     verbose,
     theme,
+    enable_color,
   )
   .await
 }

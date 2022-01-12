@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.52"
+atty = "0.2.14"
 bat = "0.18.3"
 clap = { version = "3.0.0", features=["regex", "cargo"] }
 clap_complete = "3.0.0"
