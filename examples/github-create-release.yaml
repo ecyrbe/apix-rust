@@ -1,0 +1,29 @@
+---
+apiVersion: apix.io/v1
+metadata:
+  name: github-create-release
+  labels:
+    app: apix
+    apix.io/api: github
+  annotations:
+    apix.io/created-by: ecyrbe
+    apix.io/created-at: "2022-01-12T20:00:09.830263999+00:00"
+    apix.io/convert-body-string-to-json: "true"
+kind: Request
+spec:
+  request:
+    method: POST
+    url: "{{ env.GITHUB_API_URL }}/repos/{{ env.GITHUB_REPOSITORY }}/releases"
+    headers:
+      accept: application/vnd.github.v3+json
+      authorization: Bearer {{ env.GITHUB_TOKEN }}
+    body: |-
+      {
+        "tag_name": "{{ env.GITHUB_REF_NAME }}",
+        "target_commitish": "{{ env.GITHUB_SHA }}",
+        "name": "Release {{ env.GITHUB_REF_NAME }}",
+        "body": "{{ env.GITHUB_EVENT_NAME }}",
+        "draft": false,
+        "prerelease": false,
+        "generate_release_notes": true
+      }

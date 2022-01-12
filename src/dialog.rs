@@ -5,7 +5,6 @@ use jsonschema::{Draft, JSONSchema};
 use serde_json::Value;
 
 fn input_to_value(input: &str) -> Value {
-  // safe to unwrap because we always return an Ok value
   match serde_json::from_str(input) {
     Ok(value) => value,
     _ => Value::String(input.to_string()),
