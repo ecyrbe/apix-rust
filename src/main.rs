@@ -23,6 +23,7 @@ use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequ
 use match_params::{match_body, match_headers, match_queries, RequestParam};
 use match_prompts::MatchPrompts;
 use once_cell::sync::Lazy;
+use requests::RequestOptions;
 use std::io;
 use std::io::Write;
 use std::string::ToString;
@@ -380,12 +381,30 @@ async fn main() -> Result<()> {
       if let Some(file) = matches.value_of("file") {
         let content = std::fs::read_to_string(file)?;
         let manifest: ApixManifest = serde_yaml::from_str(&content)?;
-        handle_execute(file, &manifest, &theme, enable_color, matches.is_present("verbose")).await?;
+        handle_execute(
+          file,
+          &manifest,
+          RequestOptions {
+            verbose: matches.is_present("verbose"),
+            theme: &theme,
+            enable_color,
+          },
+        )
+        .await?;
       } else if let Ok(name) = matches.match_or_input("name", "Request name") {
         match ApixManifest::find_manifest("request", &name) {
           Some((path, manifest)) => {
             let path = path.to_str().ok_or_else(|| anyhow!("Invalid path"))?;
-            handle_execute(path, &manifest, &theme, enable_color, matches.is_present("verbose")).await?;
+            handle_execute(
+              path,
+              &manifest,
+              RequestOptions {
+                verbose: matches.is_present("verbose"),
+                theme: &theme,
+                enable_color,
+              },
+            )
+            .await?;
           }
           None => {
             println!("No request where found with name {}", name);
@@ -482,9 +501,11 @@ async fn main() -> Result<()> {
           match_headers(matches).as_ref(),
           match_queries(matches).as_ref(),
           match_body(matches)?,
-          matches.is_present("verbose"),
-          &theme,
-          enable_color,
+          RequestOptions {
+            verbose: matches.is_present("verbose"),
+            theme: &theme,
+            enable_color,
+          },
         )
         .await?;
       }

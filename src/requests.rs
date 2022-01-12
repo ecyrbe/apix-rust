@@ -54,15 +54,19 @@ impl AdvancedBody {
   }
 }
 
+pub struct RequestOptions<'a> {
+  pub verbose: bool,
+  pub theme: &'a str,
+  pub enable_color: bool,
+}
+
 pub async fn make_request(
   url: &str,
   method: &str,
   headers: Option<&HeaderMap>,
   queries: Option<&IndexMap<String, String>>,
   body: AdvancedBody,
-  verbose: bool,
-  theme: &str,
-  enable_color: bool,
+  options: RequestOptions<'_>,
 ) -> Result<()> {
   let client = Client::builder().gzip(true).build()?;
   let mut builder = client.request(Method::from_str(&method.to_uppercase())?, url);
@@ -95,13 +99,13 @@ pub async fn make_request(
     AdvancedBody::None => {}
   }
   let req = builder.build()?;
-  if verbose {
-    req.print(theme, enable_color)?;
+  if options.verbose {
+    req.print(options.theme, options.enable_color)?;
     println!();
   }
   let result = client.execute(req).await?;
-  if verbose {
-    result.print(theme, enable_color)?;
+  if options.verbose {
+    result.print(options.theme, options.enable_color)?;
     println!();
   }
   let language = result.get_language();
@@ -129,9 +133,9 @@ pub async fn make_request(
     if !response_body.is_empty() {
       pretty_print(
         response_body.as_bytes(),
-        theme,
+        options.theme,
         language.unwrap_or_default(),
-        enable_color,
+        options.enable_color,
       )?;
       println!();
     }
