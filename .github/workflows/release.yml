@@ -40,7 +40,7 @@ jobs:
           cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
-          tar -zcvf apix-${{github.ref_name}}-ubuntu-linux-x64.tar.gz .
+          tar -zcvf apix-${{github.ref_name}}-ubuntu-linux-x64.tar.gz apix LICENSE README.md
       - name: upload tarball
         id: upload
         run: |-
