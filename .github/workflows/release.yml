@@ -40,10 +40,9 @@ jobs:
           cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
-
-          tar -zcvf apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz .
+          tar -zcvf apix-${{github.ref_name}}-ubuntu-linux-x64.tar.gz .
       - name: upload tarball
         id: upload
         run: |-
           cd examples
-          ../target/release/apix post https://uploads.github.com/repos/${{ github.repository }}/releases/{{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz" -f ../target/release/apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          ../target/release/apix post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-ubuntu-linux-x64.tar.gz" -f ../target/release/apix-${{github.ref_name}}-ubuntu-linux-x64.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
