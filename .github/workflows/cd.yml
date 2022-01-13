@@ -34,8 +34,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         run: |-
+          chmod +x target/release/apix
           cd examples
-          chmod +x ../target/release/apix
           ../target/release/apix exec github-create-release > result.json
           content=`cat result.json`
           content="${content//'%'/'%25'}"
@@ -52,7 +52,7 @@ jobs:
       - name: upload tarball
         run: |-
           cd target/release
-          apix post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz" -f apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          ./apix post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz" -f apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
   build:
     strategy:
       fail-fast: false
@@ -101,4 +101,5 @@ jobs:
       - name: upload artifact
         run: |-
           cd target/release
-          ${{ matrix.job.apix }} post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}" -f apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          chmod +x ${{ matrix.job.apix }}
+          ./${{ matrix.job.apix }} post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}" -f apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
