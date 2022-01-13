@@ -37,7 +37,7 @@ jobs:
           echo "::set-output name=release::$content"
       - name: create tarball
         run: |-
-          cp RELEASE.md target/release/RELEASE.md
+          cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
 
