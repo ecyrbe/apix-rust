@@ -22,10 +22,28 @@ jobs:
           command: build
           args: --release
       # eat your own food. use apix to create a release
-      - name: create Release
+      - name: create release
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         run: |-
           cd examples
           chmod +x ../target/release/apix
-          ../target/release/apix exec github-create-release
+          ../target/release/apix exec github-create-release > result.json
+          content=`cat result.json`
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          echo "::set-output name=release::$content"
+      - name: create tarball
+        run: |-
+          cp RELEASE.md target/release/RELEASE.md
+          cp LICENSE target/release/LICENSE
+          cd target/release
+
+          tar -zcvf apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz .
+      - name: upload tarball
+        id: upload
+        run: |-
+          cd examples
+          ../target/release/apix post https://uploads.github.com/repos/${{ github.repository }}/releases/{{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz" -f ../target/release/apix-{{github.ref_name}}-ubuntu-linux-x64.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
