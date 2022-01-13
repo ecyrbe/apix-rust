@@ -6,7 +6,7 @@ use futures::stream::TryStreamExt;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::{
-  header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, USER_AGENT},
+  header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE, USER_AGENT},
   Body, Client, Method,
 };
 use std::fs::File;
@@ -91,7 +91,9 @@ pub async fn make_request(
       let stream = FramedRead::new(async_file, BytesCodec::new()).inspect_ok(move |bytes| {
         progress_bar.update_progress(bytes.len() as u64);
       });
-      builder = builder.body(Body::wrap_stream(stream));
+      builder = builder
+        .header(CONTENT_LENGTH, file_size)
+        .body(Body::wrap_stream(stream));
     }
     AdvancedBody::Json(body) => {
       builder = builder.json(&body);
