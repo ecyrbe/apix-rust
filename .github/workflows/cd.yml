@@ -1,4 +1,4 @@
-name: create apix release
+name: CD
 on:
   push:
     tags:
@@ -74,6 +74,8 @@ jobs:
             cmd: tar -zcvf
             apix: apix
     runs-on: ${{ matrix.job.os }}
+    needs:
+      - release
     steps:
       - name: checkout
         uses: actions/checkout@v2
