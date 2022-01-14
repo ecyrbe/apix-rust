@@ -42,7 +42,6 @@ jobs:
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           echo "::set-output name=release::$content"
-
       - name: create tarball
         run: |-
           cp README.md target/release/README.md
@@ -102,4 +101,4 @@ jobs:
         run: |-
           cd target/release
           chmod +x ${{ matrix.job.apix }}
-          ./${{ matrix.job.apix }} post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}" -f apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          ./${{ matrix.job.apix }} post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(needs.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}" -f apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
