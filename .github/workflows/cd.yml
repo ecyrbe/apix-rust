@@ -108,4 +108,4 @@ jobs:
           ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}.${{ matrix.job.ext }}
         run: |-
           cd examples
-          ../target/release/${{ matrix.job.apix }} exec github-upload-release-asset -p releaseId:${{ RELEASE_ID }} -p asset:${ASSET}
+          ../target/release/${{ matrix.job.apix }} exec github-upload-release-asset -p releaseId:${RELEASE_ID} -p asset:${ASSET}
