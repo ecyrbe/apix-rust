@@ -51,9 +51,12 @@ jobs:
           cd target/release
           tar -zcvf apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz apix LICENSE README.md
       - name: upload tarball
+        env:
+          RELEASE_ID: ${{ fromJson(steps.release.outputs.release).id }}
+          ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz
         run: |-
-          cd target/release
-          ./apix post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ fromJson(steps.release.outputs.release).id }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz" -f apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          cd examples
+          ../target/release/apix exec github-upload-release-asset -p releaseId:${RELEASE_ID} -p asset:${ASSET}
   build:
     strategy:
       fail-fast: false
@@ -62,17 +65,17 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-gnu
             ext: .zip
-            cmd: 7z -y a
+            compress: 7z -y a
             apix: apix.exe
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             ext: .zip
-            cmd: 7z -y a
+            compress: 7z -y a
             apix: apix.exe
           - os: macos-latest
             target: x86_64-apple-darwin
             ext: .tar.gz
-            cmd: tar -zcvf
+            compress: tar -zcvf
             apix: apix
     runs-on: ${{ matrix.job.os }}
     needs:
@@ -97,9 +100,12 @@ jobs:
           cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
-          ${{ matrix.job.cmd }} apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} ${{ matrix.job.apix }} LICENSE README.md
-      - name: upload artifact
-        run: |-
-          cd target/release
           chmod +x ${{ matrix.job.apix }}
-          ./${{ matrix.job.apix }} post https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.release.outputs.release }}/assets -q "name:apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}" -f apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} -H "Authorization:Bearer ${{ secrets.GITHUB_TOKEN }}"  -H "Content-Type:application/gzip" -H "Accept:application/vnd.github.v3+json"
+          ${{ matrix.job.compress }} apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} ${{ matrix.job.apix }} LICENSE README.md
+      - name: upload artifact
+        env:
+          RELEASE_ID: ${{ needs.release.outputs.release }}
+          ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}.${{ matrix.job.ext }}
+        run: |-
+          cd examples
+          ../target/release/${{ matrix.job.apix }} exec github-upload-release-asset -p releaseId:${{ RELEASE_ID }} -p asset:${ASSET}
