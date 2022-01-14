@@ -14,6 +14,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
     outputs:
       release: ${{ fromJson(steps.release.outputs.release).id }}
+    env:
+      ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ${{ matrix.job.os }}
     steps:
       - name: checkout
@@ -33,8 +36,6 @@ jobs:
       # eat your own food. use apix to create a release
       - name: create release
         id: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         run: |-
           chmod +x target/release/apix
           cd examples
@@ -49,11 +50,10 @@ jobs:
           cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
-          tar -zcvf apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz apix LICENSE README.md
+          tar -zcvf ${ASSET} apix LICENSE README.md
       - name: upload tarball
         env:
           RELEASE_ID: ${{ fromJson(steps.release.outputs.release).id }}
-          ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}.tar.gz
         run: |-
           cd examples
           ../target/release/apix exec github-upload-release-asset -p releaseId:${RELEASE_ID} -p asset:${ASSET}
@@ -80,6 +80,9 @@ jobs:
     runs-on: ${{ matrix.job.os }}
     needs:
       - release
+    env:
+      ASSET: apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -101,7 +104,7 @@ jobs:
           cp LICENSE target/release/LICENSE
           cd target/release
           chmod +x ${{ matrix.job.apix }}
-          ${{ matrix.job.compress }} apix-${{github.ref_name}}-${{ matrix.job.target }}${{ matrix.job.ext }} ${{ matrix.job.apix }} LICENSE README.md
+          ${{ matrix.job.compress }} ${ASSET} ${{ matrix.job.apix }} LICENSE README.md
       - name: upload artifact
         env:
           RELEASE_ID: ${{ needs.release.outputs.release }}
