@@ -50,13 +50,13 @@ jobs:
           cp README.md target/release/README.md
           cp LICENSE target/release/LICENSE
           cd target/release
-          tar -zcvf ${ASSET} apix LICENSE README.md
+          tar -zcvf ${{ env.ASSET }} apix LICENSE README.md
       - name: upload tarball
         env:
           RELEASE_ID: ${{ fromJson(steps.release.outputs.release).id }}
         run: |-
           cd examples
-          ../target/release/apix exec github-upload-release-asset -p releaseId:${RELEASE_ID} -p asset:${ASSET}
+          ../target/release/apix exec github-upload-release-asset
   build:
     strategy:
       fail-fast: false
@@ -104,10 +104,10 @@ jobs:
           cp LICENSE target/release/LICENSE
           cd target/release
           chmod +x ${{ matrix.job.apix }}
-          ${{ matrix.job.compress }} ${ASSET} ${{ matrix.job.apix }} LICENSE README.md
+          ${{ matrix.job.compress }} ${{ env.ASSET}} ${{ matrix.job.apix }} LICENSE README.md
       - name: upload artifact
         env:
           RELEASE_ID: ${{ needs.release.outputs.release }}
         run: |-
           cd examples
-          ../target/release/${{ matrix.job.apix }} exec github-upload-release-asset -p releaseId:${RELEASE_ID} -p asset:${ASSET}
+          ../target/release/${{ matrix.job.apix }} exec github-upload-release-asset
