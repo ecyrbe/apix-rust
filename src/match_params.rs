@@ -13,7 +13,7 @@ pub enum RequestParam {
   Header,
   Cookie,
   Query,
-  Variable,
+  Parameter,
 }
 
 #[derive(Debug)]
@@ -38,9 +38,9 @@ impl FromStr for HeaderTuple {
 }
 
 #[derive(Debug)]
-struct QueryTuple(String, String);
+struct StringTuple(String, String);
 
-impl FromStr for QueryTuple {
+impl FromStr for StringTuple {
   type Err = anyhow::Error;
   fn from_str(query_string: &str) -> Result<Self, Self::Err> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new("^([\\w-]+):(.*)$").unwrap());
@@ -52,7 +52,7 @@ impl FromStr for QueryTuple {
         query_string
       )
     })?;
-    Ok(QueryTuple(header_split[1].to_string(), header_split[2].to_string()))
+    Ok(StringTuple(header_split[1].to_string(), header_split[2].to_string()))
   }
 }
 
@@ -66,9 +66,18 @@ pub fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::Head
 }
 
 pub fn match_queries(matches: &clap::ArgMatches) -> Option<IndexMap<String, String>> {
-  if let Ok(query_tuples) = matches.values_of_t::<QueryTuple>("query") {
+  if let Ok(query_tuples) = matches.values_of_t::<StringTuple>("query") {
     let queries = query_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
     Some(IndexMap::from_iter(queries))
+  } else {
+    None
+  }
+}
+
+pub fn match_params(matches: &clap::ArgMatches) -> Option<IndexMap<String, String>> {
+  if let Ok(param_tuples) = matches.values_of_t::<StringTuple>("param") {
+    let params = param_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
+    Some(IndexMap::from_iter(params))
   } else {
     None
   }

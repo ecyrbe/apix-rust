@@ -1,0 +1,31 @@
+---
+apiVersion: apix.io/v1
+metadata:
+  name: github-upload-release-asset
+  labels:
+    app: apix
+    apix.io/api: github
+  annotations:
+    apix.io/created-by: ecyrbe
+    apix.io/created-at: "2022-01-12T20:00:09.830263999+00:00"
+    apix.io/body-file: "../target/release/{{ parameters.asset }}"
+kind: Request
+spec:
+  parameters:
+    - name: releaseId
+      required: true
+      schema:
+        type: integer
+    - name: asset
+      required: true
+      schema:
+        type: string
+  request:
+    method: POST
+    url: https://uploads.github.com/repos/{{ env.GITHUB_REPOSITORY }}/releases/{{ parameters.releaseId }}/assets
+    headers:
+      accept: application/vnd.github.v3+json
+      content-type: application/gzip
+      authorization: Bearer {{ env.GITHUB_TOKEN }}
+    queries:
+      name: "{{ parameters.asset }}"

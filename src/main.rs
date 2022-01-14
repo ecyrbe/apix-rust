@@ -20,7 +20,7 @@ use editor::edit_file;
 use execute::handle_execute;
 use indexmap::indexmap;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequestTemplate};
-use match_params::{match_body, match_headers, match_queries, RequestParam};
+use match_params::{match_body, match_headers, match_params, match_queries, RequestParam};
 use match_prompts::MatchPrompts;
 use once_cell::sync::Lazy;
 use requests::RequestOptions;
@@ -74,13 +74,13 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .takes_value(true)
         .conflicts_with("body")
         .value_hint(ValueHint::FilePath),
-      Arg::new("variable")
-        .short('e')
-        .long("env")
-        .help("set variable name:value for 'Tera' template rendering")
+      Arg::new("param")
+        .short('p')
+        .long("param")
+        .help("set parameter name:value for 'Tera' template rendering")
         .multiple_occurrences(true)
         .takes_value(true)
-        .validator(|param| validate_param(param, RequestParam::Variable)),
+        .validator(|param| validate_param(param, RequestParam::Parameter)),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
         .short('i')
@@ -91,7 +91,7 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
 }
 
 fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static EXEC_ARGS: Lazy<[Arg<'static>; 2]> = Lazy::new(|| {
+  static EXEC_ARGS: Lazy<[Arg<'static>; 3]> = Lazy::new(|| {
     [
       Arg::new("name").help("name of the request to execute").index(1),
       Arg::new("file")
@@ -101,6 +101,13 @@ fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .takes_value(true)
         .value_hint(ValueHint::FilePath)
         .conflicts_with("name"),
+      Arg::new("param")
+        .help("Set a parameter for the request")
+        .short('p')
+        .long("param")
+        .multiple_occurrences(true)
+        .takes_value(true)
+        .validator(|param| validate_param(param, RequestParam::Parameter)),
     ]
   });
   EXEC_ARGS.iter()
@@ -153,13 +160,13 @@ fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .takes_value(true)
         .conflicts_with("body")
         .value_hint(ValueHint::FilePath),
-      Arg::new("variable")
-        .short('e')
-        .long("env")
-        .help("set variable name:value for 'Tera' template rendering")
+      Arg::new("param")
+        .short('p')
+        .long("param")
+        .help("set parameter name:value for 'Tera' template rendering")
         .multiple_occurrences(true)
         .takes_value(true)
-        .validator(|param| validate_param(param, RequestParam::Variable)),
+        .validator(|param| validate_param(param, RequestParam::Parameter)),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
         .short('i')
@@ -384,6 +391,7 @@ async fn main() -> Result<()> {
         handle_execute(
           file,
           &manifest,
+          match_params(matches),
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
@@ -398,6 +406,7 @@ async fn main() -> Result<()> {
             handle_execute(
               path,
               &manifest,
+              match_params(matches),
               RequestOptions {
                 verbose: matches.is_present("verbose"),
                 theme: &theme,

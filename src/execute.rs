@@ -18,8 +18,8 @@ struct RequestTemplate<'a> {
   engine: Tera,
   context: Context,
   convert_body_to_json: bool,
-  load_body_from_file: Option<String>,
-  file: String,
+  body_file: Option<String>,
+  file: &'a str,
 }
 
 struct RequestParams {
@@ -33,20 +33,35 @@ struct RequestParams {
 // ask for all parameters in manifest request
 fn ask_for_required_parameters(
   request: &ApixRequest,
+  params: Option<IndexMap<String, String>>,
 ) -> Result<serde_json::Map<String, serde_json::Value>, anyhow::Error> {
-  request
-    .parameters
-    .iter()
-    .filter(|param| param.required)
-    .map(|parameter| Ok((parameter.name.clone(), parameter.ask()?)))
-    .collect()
+  match params {
+    Some(params) => request
+      .parameters
+      .iter()
+      .filter(|param| param.required || params.get(&param.name).is_some())
+      .map(|parameter| {
+        if let Some(param) = params.get(&parameter.name) {
+          Ok((parameter.name.clone(), Value::String(param.clone())))
+        } else {
+          Ok((parameter.name.clone(), parameter.ask()?))
+        }
+      })
+      .collect(),
+    None => request
+      .parameters
+      .iter()
+      .filter(|param| param.required)
+      .map(|parameter| Ok((parameter.name.clone(), parameter.ask()?)))
+      .collect(),
+  }
 }
 
 impl<'a> RequestTemplate<'a> {
-  fn new(manifest: &'a ApixManifest, file: String) -> Result<Self> {
+  fn new(manifest: &'a ApixManifest, file: &'a str, params: Option<IndexMap<String, String>>) -> Result<Self> {
     match manifest.kind() {
       ApixKind::Request(request) => {
-        let parameters = Value::Object(ask_for_required_parameters(request)?);
+        let parameters = Value::Object(ask_for_required_parameters(request, params)?);
         let env: HashMap<String, String> = std::env::vars().collect();
         let engine = Tera::default();
         let mut context = Context::new();
@@ -60,8 +75,8 @@ impl<'a> RequestTemplate<'a> {
           .map(|v| bool::from_str(v).unwrap_or(false))
           .unwrap_or(false);
 
-        let load_body_from_file = manifest
-          .get_annotation(&"apix.io/load-body-from-file".to_string())
+        let body_file = manifest
+          .get_annotation(&"apix.io/body-file".to_string())
           .map(|v| v.to_string());
 
         Ok(Self {
@@ -69,7 +84,7 @@ impl<'a> RequestTemplate<'a> {
           engine,
           context,
           convert_body_to_json,
-          load_body_from_file,
+          body_file,
           file,
         })
       }
@@ -136,7 +151,7 @@ impl<'a> RequestTemplate<'a> {
     match (
       self.request.request.body.as_ref(),
       self.convert_body_to_json,
-      self.load_body_from_file.as_ref(),
+      self.body_file.as_ref(),
     ) {
       (Some(Value::String(body)), true, _) => {
         let string_body = self
@@ -152,7 +167,13 @@ impl<'a> RequestTemplate<'a> {
         body,
         &self.context,
       )?)),
-      (None, _, Some(file)) => Ok(AdvancedBody::File(file.to_owned())),
+      (None, _, Some(filepath)) => {
+        let render_filepath =
+          self
+            .engine
+            .render_string(&format!("{}#/body-file", self.file), filepath, &self.context)?;
+        Ok(AdvancedBody::File(render_filepath))
+      }
       (None, _, None) => Ok(AdvancedBody::None),
     }
   }
@@ -173,8 +194,13 @@ impl<'a> RequestTemplate<'a> {
   }
 }
 
-pub async fn handle_execute(file: &str, manifest: &ApixManifest, options: RequestOptions<'_>) -> Result<()> {
-  let params = RequestTemplate::new(manifest, file.to_string())?
+pub async fn handle_execute(
+  file: &str,
+  manifest: &ApixManifest,
+  params: Option<IndexMap<String, String>>,
+  options: RequestOptions<'_>,
+) -> Result<()> {
+  let params = RequestTemplate::new(manifest, file, params)?
     .render_context()?
     .render_request_params()?;
   requests::make_request(

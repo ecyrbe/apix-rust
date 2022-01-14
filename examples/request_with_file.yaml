@@ -7,7 +7,7 @@ metadata:
     # you can upload files to body instead of using the body field
     # but templating is not supported for files
     # you should then use external files to upload large binary files
-    apix.io/load-body-from-file: "test.json"
+    apix.io/body-file: "test.json"
 kind: Request
 spec:
   request:
