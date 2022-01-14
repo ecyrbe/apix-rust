@@ -13,7 +13,7 @@ pub enum RequestParam {
   Header,
   Cookie,
   Query,
-  Parameter,
+  Param,
 }
 
 #[derive(Debug)]
@@ -56,40 +56,39 @@ impl FromStr for StringTuple {
   }
 }
 
-pub fn match_headers(matches: &clap::ArgMatches) -> Option<reqwest::header::HeaderMap> {
-  if let Ok(header_tuples) = matches.values_of_t::<HeaderTuple>("header") {
-    let headers = header_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-    Some(HeaderMap::from_iter(headers))
-  } else {
-    None
-  }
+pub trait MatchParams {
+  fn match_headers(&self) -> Option<reqwest::header::HeaderMap>;
+  fn match_params(&self, param_type: RequestParam) -> Option<IndexMap<String, String>>;
+  fn match_body(&self) -> Result<AdvancedBody>;
 }
 
-pub fn match_queries(matches: &clap::ArgMatches) -> Option<IndexMap<String, String>> {
-  if let Ok(query_tuples) = matches.values_of_t::<StringTuple>("query") {
-    let queries = query_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-    Some(IndexMap::from_iter(queries))
-  } else {
-    None
+impl MatchParams for clap::ArgMatches {
+  fn match_headers(&self) -> Option<reqwest::header::HeaderMap> {
+    if let Ok(header_tuples) = self.values_of_t::<HeaderTuple>("header") {
+      let headers = header_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
+      Some(HeaderMap::from_iter(headers))
+    } else {
+      None
+    }
   }
-}
 
-pub fn match_params(matches: &clap::ArgMatches) -> Option<IndexMap<String, String>> {
-  if let Ok(param_tuples) = matches.values_of_t::<StringTuple>("param") {
-    let params = param_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
-    Some(IndexMap::from_iter(params))
-  } else {
-    None
+  fn match_params(&self, param_type: RequestParam) -> Option<IndexMap<String, String>> {
+    if let Ok(param_tuples) = self.values_of_t::<StringTuple>(&param_type.to_string()) {
+      let params = param_tuples.iter().map(|tuple| (tuple.0.clone(), tuple.1.clone()));
+      Some(IndexMap::from_iter(params))
+    } else {
+      None
+    }
   }
-}
 
-pub fn match_body(matches: &clap::ArgMatches) -> Result<AdvancedBody> {
-  if let Some(body) = matches.value_of("body") {
-    Ok(AdvancedBody::String(body.to_string()))
-  } else if let Some(file) = matches.value_of("file") {
-    Ok(AdvancedBody::File(file.to_string()))
-  } else {
-    Ok(AdvancedBody::None)
+  fn match_body(&self) -> Result<AdvancedBody> {
+    if let Some(body) = self.value_of("body") {
+      Ok(AdvancedBody::String(body.to_string()))
+    } else if let Some(file) = self.value_of("file") {
+      Ok(AdvancedBody::File(file.to_string()))
+    } else {
+      Ok(AdvancedBody::None)
+    }
   }
 }
 
@@ -104,7 +103,7 @@ mod tests {
     let matches = App::new("test")
       .arg(arg!(--header "Header to add").takes_value(true))
       .get_matches_from(vec!["test", "--header", "foo:bar"]);
-    let headers = match_headers(&matches);
+    let headers = matches.match_headers();
     assert!(headers.is_some());
     let headers = headers.unwrap();
     assert_eq!(headers.get("foo"), Some(&"bar".parse::<HeaderValue>().unwrap()));
@@ -116,10 +115,22 @@ mod tests {
     let matches = App::new("test")
       .arg(arg!(--query "Query to add").takes_value(true))
       .get_matches_from(vec!["test", "--query", "foo:bar"]);
-    let queries = match_queries(&matches);
+    let queries = matches.match_params(RequestParam::Query);
     assert!(queries.is_some());
     let queries = queries.unwrap();
     assert_eq!(queries.get("foo"), Some(&"bar".to_string()));
+  }
+
+  // test match params
+  #[test]
+  fn test_match_params() {
+    let matches = App::new("test")
+      .arg(arg!(--param "Param to add").takes_value(true))
+      .get_matches_from(vec!["test", "--param", "foo:bar"]);
+    let params = matches.match_params(RequestParam::Param);
+    assert!(params.is_some());
+    let params = params.unwrap();
+    assert_eq!(params.get("foo"), Some(&"bar".to_string()));
   }
 
   // test match body
@@ -128,7 +139,7 @@ mod tests {
     let matches = App::new("test")
       .arg(arg!(--body "Body to add").takes_value(true))
       .get_matches_from(vec!["test", "--body", "foo"]);
-    let body = match_body(&matches);
+    let body = matches.match_body();
     assert!(body.is_ok());
     assert_eq!(body.unwrap().to_string().unwrap(), "foo".to_string());
   }

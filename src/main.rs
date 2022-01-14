@@ -20,7 +20,7 @@ use editor::edit_file;
 use execute::handle_execute;
 use indexmap::indexmap;
 use manifests::{ApixConfiguration, ApixKind, ApixManifest, ApixRequest, ApixRequestTemplate};
-use match_params::{match_body, match_headers, match_params, match_queries, RequestParam};
+use match_params::{MatchParams, RequestParam};
 use match_prompts::MatchPrompts;
 use once_cell::sync::Lazy;
 use requests::RequestOptions;
@@ -80,7 +80,7 @@ fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .help("set parameter name:value for 'Tera' template rendering")
         .multiple_occurrences(true)
         .takes_value(true)
-        .validator(|param| validate_param(param, RequestParam::Parameter)),
+        .validator(|param| validate_param(param, RequestParam::Param)),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
         .short('i')
@@ -107,7 +107,7 @@ fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .long("param")
         .multiple_occurrences(true)
         .takes_value(true)
-        .validator(|param| validate_param(param, RequestParam::Parameter)),
+        .validator(|param| validate_param(param, RequestParam::Param)),
     ]
   });
   EXEC_ARGS.iter()
@@ -166,7 +166,7 @@ fn build_create_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .help("set parameter name:value for 'Tera' template rendering")
         .multiple_occurrences(true)
         .takes_value(true)
-        .validator(|param| validate_param(param, RequestParam::Parameter)),
+        .validator(|param| validate_param(param, RequestParam::Param)),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
         .short('i')
@@ -391,7 +391,7 @@ async fn main() -> Result<()> {
         handle_execute(
           file,
           &manifest,
-          match_params(matches),
+          matches.match_params(RequestParam::Param),
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
@@ -406,7 +406,7 @@ async fn main() -> Result<()> {
             handle_execute(
               path,
               &manifest,
-              match_params(matches),
+              matches.match_params(RequestParam::Param),
               RequestOptions {
                 verbose: matches.is_present("verbose"),
                 theme: &theme,
@@ -507,9 +507,9 @@ async fn main() -> Result<()> {
         requests::make_request(
           url,
           method,
-          match_headers(matches).as_ref(),
-          match_queries(matches).as_ref(),
-          match_body(matches)?,
+          matches.match_headers().as_ref(),
+          matches.match_params(RequestParam::Query).as_ref(),
+          matches.match_body()?,
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
