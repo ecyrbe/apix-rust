@@ -26,6 +26,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.job.target }}
+          components: git-cliff
           profile: minimal
           default: true
       - name: build apix
@@ -39,6 +40,8 @@ jobs:
       - name: create release
         id: release
         run: |-
+          git-cliff -l > /tmp/changelog.txt
+          export CHANGELOG=$(cat /tmp/changelog.txt)
           chmod +x target/release/apix
           cd examples
           ../target/release/apix exec github-create-release > result.json
