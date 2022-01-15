@@ -9,21 +9,21 @@ edition = "2021"
 anyhow = "1.0.52"
 atty = "0.2.14"
 bat = "0.18.3"
-clap = { version = "3.0.0", features=["regex", "cargo"] }
-clap_complete = "3.0.0"
+clap = { version = "3.0.7", features=["regex", "cargo"] }
+clap_complete = "3.0.3"
 cmd_lib = "1.3.0"
 chrono = "0.4.19"
 dialoguer = "0.9.0"
 dirs = "4.0.0"
 futures = "0.3.19"
-indexmap = { version = "1.7.0", features=["serde"]}
+indexmap = { version = "1.8.0", features=["serde"]}
 indicatif = "0.16.2"
 jsonschema = "0.13.3"
 once_cell = "1.9.0"
 regex = "1.5.4"
-reqwest = { version="0.11.8", features = ["gzip","json","stream"] }
-serde = "1.0.132"
-serde_json = { version = "1.0.73", features=["preserve_order"] }
+reqwest = { version="0.11.9", features = ["gzip","json","stream"] }
+serde = "1.0.133"
+serde_json = { version = "1.0.74", features=["preserve_order"] }
 serde_yaml = "0.8.23"
 strum = "0.23.0"
 strum_macros = "0.23.1"
