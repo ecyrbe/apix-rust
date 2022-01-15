@@ -39,7 +39,6 @@ pub enum AdvancedBody {
   Json(serde_json::Value),
   String(String),
   File(String),
-  None,
 }
 
 impl AdvancedBody {
@@ -49,7 +48,6 @@ impl AdvancedBody {
       AdvancedBody::Json(value) => Ok(serde_json::to_string(value)?),
       AdvancedBody::String(value) => Ok(value.to_string()),
       AdvancedBody::File(path) => Ok(std::fs::read_to_string(path)?),
-      AdvancedBody::None => Ok(String::new()),
     }
   }
 }
@@ -65,7 +63,7 @@ pub async fn make_request(
   method: &str,
   headers: Option<&HeaderMap>,
   queries: Option<&IndexMap<String, String>>,
-  body: AdvancedBody,
+  body: Option<AdvancedBody>,
   options: RequestOptions<'_>,
 ) -> Result<()> {
   let client = Client::builder().gzip(true).build()?;
@@ -79,10 +77,10 @@ pub async fn make_request(
     builder = builder.query(query);
   }
   match body {
-    AdvancedBody::String(body) => {
+    Some(AdvancedBody::String(body)) => {
       builder = builder.body(body);
     }
-    AdvancedBody::File(file_path) => {
+    Some(AdvancedBody::File(file_path)) => {
       let file =
         File::open(&file_path).map_err(|e| anyhow::anyhow!("Could not open File '{}'\nCause: {}", &file_path, e))?;
       let file_size = file.metadata()?.len();
@@ -95,10 +93,10 @@ pub async fn make_request(
         .header(CONTENT_LENGTH, file_size)
         .body(Body::wrap_stream(stream));
     }
-    AdvancedBody::Json(body) => {
+    Some(AdvancedBody::Json(body)) => {
       builder = builder.json(&body);
     }
-    AdvancedBody::None => {}
+    None => {}
   }
   let req = builder.build()?;
   if options.verbose {

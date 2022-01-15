@@ -59,7 +59,7 @@ impl FromStr for StringTuple {
 pub trait MatchParams {
   fn match_headers(&self) -> Option<reqwest::header::HeaderMap>;
   fn match_params(&self, param_type: RequestParam) -> Option<IndexMap<String, String>>;
-  fn match_body(&self) -> Result<AdvancedBody>;
+  fn match_body(&self) -> Option<AdvancedBody>;
 }
 
 impl MatchParams for clap::ArgMatches {
@@ -81,13 +81,11 @@ impl MatchParams for clap::ArgMatches {
     }
   }
 
-  fn match_body(&self) -> Result<AdvancedBody> {
+  fn match_body(&self) -> Option<AdvancedBody> {
     if let Some(body) = self.value_of("body") {
-      Ok(AdvancedBody::String(body.to_string()))
-    } else if let Some(file) = self.value_of("file") {
-      Ok(AdvancedBody::File(file.to_string()))
+      Some(AdvancedBody::String(body.to_string()))
     } else {
-      Ok(AdvancedBody::None)
+      self.value_of("file").map(|file| AdvancedBody::File(file.to_string()))
     }
   }
 }
@@ -140,7 +138,7 @@ mod tests {
       .arg(arg!(--body "Body to add").takes_value(true))
       .get_matches_from(vec!["test", "--body", "foo"]);
     let body = matches.match_body();
-    assert!(body.is_ok());
+    assert!(body.is_some());
     assert_eq!(body.unwrap().to_string().unwrap(), "foo".to_string());
   }
 }

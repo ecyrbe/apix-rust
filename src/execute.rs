@@ -1,8 +1,7 @@
 use crate::manifests::ApixRequest;
-use crate::requests::{AdvancedBody, RequestOptions};
+use crate::requests::{make_request, AdvancedBody, RequestOptions};
 
 use super::dialog::Dialog;
-use super::requests;
 use super::template::{MapTemplate, StringTemplate, ValueTemplate};
 use super::{ApixKind, ApixManifest};
 use anyhow::Result;
@@ -27,7 +26,7 @@ struct RequestParams {
   method: String,
   headers: HeaderMap,
   queries: IndexMap<String, String>,
-  body: requests::AdvancedBody,
+  body: Option<AdvancedBody>,
 }
 
 // ask for all parameters in manifest request
@@ -147,7 +146,7 @@ impl<'a> RequestTemplate<'a> {
     Ok(queries)
   }
 
-  fn render_body(&mut self) -> Result<AdvancedBody> {
+  fn render_body(&mut self) -> Result<Option<AdvancedBody>> {
     match (
       self.request.request.body.as_ref(),
       self.convert_body_to_json,
@@ -158,23 +157,23 @@ impl<'a> RequestTemplate<'a> {
           .engine
           .render_string(&format!("{}#/body", self.file), body, &self.context)?;
         // try to parse as json or return original string if it fails
-        Ok(AdvancedBody::Json(
+        Ok(Some(AdvancedBody::Json(
           serde_json::from_str(&string_body).or::<serde_json::Error>(Ok(Value::String(string_body)))?,
-        ))
+        )))
       }
-      (Some(body), _, _) => Ok(AdvancedBody::Json(self.engine.render_value(
+      (Some(body), _, _) => Ok(Some(AdvancedBody::Json(self.engine.render_value(
         &format!("{}#/body", self.file),
         body,
         &self.context,
-      )?)),
+      )?))),
       (None, _, Some(filepath)) => {
         let render_filepath =
           self
             .engine
             .render_string(&format!("{}#/body-file", self.file), filepath, &self.context)?;
-        Ok(AdvancedBody::File(render_filepath))
+        Ok(Some(AdvancedBody::File(render_filepath)))
       }
-      (None, _, None) => Ok(AdvancedBody::None),
+      (None, _, None) => Ok(None),
     }
   }
 
@@ -203,7 +202,7 @@ pub async fn handle_execute(
   let params = RequestTemplate::new(manifest, file, params)?
     .render_context()?
     .render_request_params()?;
-  requests::make_request(
+  make_request(
     &params.url,
     &params.method,
     Some(&params.headers),

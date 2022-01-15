@@ -509,7 +509,7 @@ async fn main() -> Result<()> {
           method,
           matches.match_headers().as_ref(),
           matches.match_params(RequestParam::Query).as_ref(),
-          matches.match_body()?,
+          matches.match_body(),
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
