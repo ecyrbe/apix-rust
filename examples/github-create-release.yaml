@@ -17,13 +17,11 @@ spec:
     headers:
       accept: application/vnd.github.v3+json
       authorization: Bearer {{ env.GITHUB_TOKEN }}
-    body: |-
-      {
-        "tag_name": "{{ env.GITHUB_REF_NAME }}",
-        "target_commitish": "{{ env.GITHUB_SHA }}",
-        "name": "Release {{ env.GITHUB_REF_NAME }}",
-        "body": "{{ env.CHANGELOG }}",
-        "draft": false,
-        "prerelease": false,
-        "generate_release_notes": true
-      }
+    body:
+      tag_name: "{{ env.GITHUB_REF_NAME }}"
+      target_commitish: "{{ env.GITHUB_SHA }}"
+      name: "Release {{ env.GITHUB_REF_NAME }}"
+      body: "{{ env.CHANGELOG }}"
+      draft: false
+      prerelease: false
+      generate_release_notes: true

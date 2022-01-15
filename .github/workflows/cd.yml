@@ -46,12 +46,12 @@ jobs:
       - name: create release
         id: release
         run: |-
-          git-cliff -l > /tmp/changelog.txt
-          export CHANGELOG=$(cat /tmp/changelog.txt)
+          git-cliff -l > changelog.txt
+          CHANGELOG=`cat changelog.txt`
           chmod +x target/release/apix
           cd examples
-          ../target/release/apix exec github-create-release > result.json
-          content=`cat result.json`
+          ../target/release/apix exec github-create-release > release.json
+          content=`cat release.json`
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
