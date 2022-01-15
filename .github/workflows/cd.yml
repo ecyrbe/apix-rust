@@ -47,7 +47,7 @@ jobs:
         id: release
         run: |-
           git-cliff -l > changelog.txt
-          CHANGELOG=`cat changelog.txt`
+          export CHANGELOG=`cat changelog.txt`
           chmod +x target/release/apix
           cd examples
           ../target/release/apix exec github-create-release > release.json
