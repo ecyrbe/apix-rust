@@ -30,6 +30,8 @@ jobs:
           default: true
       - name: build apix
         uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -C link-arg=-s
         with:
           command: build
           args: --release
@@ -95,6 +97,8 @@ jobs:
           default: true
       - name: build apix
         uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -C link-arg=-s
         with:
           command: build
           args: --release
