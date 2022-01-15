@@ -56,7 +56,7 @@ impl AdvancedBody {
 pub struct RequestOptions<'a> {
   pub verbose: bool,
   pub theme: &'a str,
-  pub enable_color: bool,
+  pub is_output_terminal: bool,
 }
 
 pub async fn make_request(
@@ -101,13 +101,13 @@ pub async fn make_request(
   }
   let req = builder.build()?;
   if options.verbose {
-    req.print(options.theme, options.enable_color)?;
+    req.print(options.theme, options.is_output_terminal)?;
     println!();
     print_separator();
   }
   let result = client.execute(req).await?;
   if options.verbose {
-    result.print(options.theme, options.enable_color)?;
+    result.print(options.theme, options.is_output_terminal)?;
     println!();
   }
   let language = result.get_language();
@@ -127,9 +127,12 @@ pub async fn make_request(
       .map_err(|e| futures::io::Error::new(futures::io::ErrorKind::Other, e))
       .into_async_read()
       .compat();
-
-    let mut file = AsyncFile::create(filename).await?;
-    tokio::io::copy(&mut stream, &mut file).await?;
+    if !options.is_output_terminal {
+      tokio::io::copy(&mut stream, &mut tokio::io::stdout()).await?;
+    } else {
+      let mut file = AsyncFile::create(filename).await?;
+      tokio::io::copy(&mut stream, &mut file).await?;
+    }
   } else {
     let response_body = result.text().await?;
     if !response_body.is_empty() {
@@ -137,7 +140,7 @@ pub async fn make_request(
         response_body,
         options.theme,
         language.unwrap_or_default(),
-        options.enable_color,
+        options.is_output_terminal,
       )?;
       println!();
     }

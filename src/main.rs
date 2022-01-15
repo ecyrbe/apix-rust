@@ -45,7 +45,7 @@ async fn handle_import(_url: &str) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-  let enable_color = atty::is(atty::Stream::Stdout);
+  let is_output_terminal = atty::is(atty::Stream::Stdout);
   let matches = build_cli().get_matches();
   // read config file
   let theme = ApixConfiguration::once().get("theme").unwrap().clone();
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
           serde_yaml::to_string(ApixConfiguration::once())?,
           &theme,
           "yaml",
-          enable_color,
+          is_output_terminal,
         )?;
       }
       Some(("set", matches)) => {
@@ -92,11 +92,11 @@ async fn main() -> Result<()> {
               format!("-{}: {}\n+{}: {}\n", key, old_value, key, value),
               &theme,
               "diff",
-              enable_color,
+              is_output_terminal,
             )?;
           } else {
             println!("Set config key");
-            pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
+            pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", is_output_terminal)?;
           }
           ApixConfiguration::once().save()?;
         }
@@ -104,14 +104,14 @@ async fn main() -> Result<()> {
       Some(("get", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().get(key) {
-          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
+          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", is_output_terminal)?;
         }
       }
       Some(("delete", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().delete(key) {
           println!("Deleted config key");
-          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
+          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", is_output_terminal)?;
           ApixConfiguration::once().save()?;
         }
       }
@@ -129,7 +129,7 @@ async fn main() -> Result<()> {
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
-            enable_color,
+            is_output_terminal,
           },
         )
         .await?;
@@ -144,7 +144,7 @@ async fn main() -> Result<()> {
               RequestOptions {
                 verbose: matches.is_present("verbose"),
                 theme: &theme,
-                enable_color,
+                is_output_terminal,
               },
             )
             .await?;
@@ -210,14 +210,14 @@ async fn main() -> Result<()> {
         if let Some(kind) = matches.value_of("resource") {
           if let Some(name) = matches.value_of("name") {
             if let Some((path, _)) = ApixManifest::find_manifest(kind, name) {
-              pretty_print_file(path, &theme, "yaml", enable_color)?;
+              pretty_print_file(path, &theme, "yaml", is_output_terminal)?;
             } else {
               println!("No resource of type {} where found with name {}", kind, name);
             }
           } else if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
             let mut printed = false;
             for (path, _) in manifests {
-              pretty_print_file(path, &theme, "yaml", enable_color)?;
+              pretty_print_file(path, &theme, "yaml", is_output_terminal)?;
               printed = true;
             }
             if !printed {
@@ -247,7 +247,7 @@ async fn main() -> Result<()> {
           RequestOptions {
             verbose: matches.is_present("verbose"),
             theme: &theme,
-            enable_color,
+            is_output_terminal,
           },
         )
         .await?;
