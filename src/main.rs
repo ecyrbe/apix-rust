@@ -130,6 +130,7 @@ async fn main() -> Result<()> {
             verbose: matches.is_present("verbose"),
             theme: &theme,
             is_output_terminal,
+            output_filename: matches.value_of("output-file"),
           },
         )
         .await?;
@@ -145,6 +146,7 @@ async fn main() -> Result<()> {
                 verbose: matches.is_present("verbose"),
                 theme: &theme,
                 is_output_terminal,
+                output_filename: matches.value_of("output-file"),
               },
             )
             .await?;
@@ -248,6 +250,7 @@ async fn main() -> Result<()> {
             verbose: matches.is_present("verbose"),
             theme: &theme,
             is_output_terminal,
+            output_filename: matches.value_of("output-file"),
           },
         )
         .await?;

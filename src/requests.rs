@@ -57,6 +57,7 @@ pub struct RequestOptions<'a> {
   pub verbose: bool,
   pub theme: &'a str,
   pub is_output_terminal: bool,
+  pub output_filename: Option<&'a str>,
 }
 
 pub async fn make_request(
@@ -113,10 +114,14 @@ pub async fn make_request(
   let language = result.get_language();
   if let Some("binary") = language {
     let url = Url::parse(url)?;
-    let filename = url
-      .path_segments()
-      .and_then(|segments| segments.last())
-      .unwrap_or("unknown.bin"); // Fallback to generic filename
+    let filename = if let Some(output_filename) = options.output_filename {
+      output_filename
+    } else {
+      url
+        .path_segments()
+        .and_then(|segments| segments.last())
+        .unwrap_or("unknown.bin")
+    };
 
     let progress_bar = FileProgressComponent::new_download(filename.to_owned(), result.content_length().unwrap_or(0));
     let mut stream = result
@@ -136,13 +141,18 @@ pub async fn make_request(
   } else {
     let response_body = result.text().await?;
     if !response_body.is_empty() {
-      pretty_print(
-        response_body,
-        options.theme,
-        language.unwrap_or_default(),
-        options.is_output_terminal,
-      )?;
-      println!();
+      if let Some(output_filename) = options.output_filename {
+        let mut file = AsyncFile::create(output_filename).await?;
+        tokio::io::copy(&mut response_body.as_bytes(), &mut file).await?;
+      } else {
+        pretty_print(
+          response_body,
+          options.theme,
+          language.unwrap_or_default(),
+          options.is_output_terminal,
+        )?;
+        println!();
+      }
     }
   }
   Ok(())

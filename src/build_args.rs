@@ -152,11 +152,20 @@ pub fn build_cli() -> App<'static> {
     .setting(AppSettings::SubcommandRequiredElseHelp)
     .version(crate_version!())
     .author(crate_authors!())
-    .args([Arg::new("verbose")
-      .help("print full request and response")
-      .short('v')
-      .long("verbose")
-      .global(true)])
+    .args([
+      Arg::new("verbose")
+        .help("print full request and response")
+        .short('v')
+        .long("verbose")
+        .global(true),
+      Arg::new("output-file")
+        .help("output file")
+        .short('o')
+        .long("output-file")
+        .takes_value(true)
+        .value_hint(ValueHint::FilePath)
+        .global(true),
+    ])
     .subcommands([
       App::new("completions").about("generate shell completions").arg(
         Arg::new("shell")
