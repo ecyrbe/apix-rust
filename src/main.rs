@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
     Some(("config", matches)) => match matches.subcommand() {
       Some(("list", _)) => {
         pretty_print(
-          serde_yaml::to_string(ApixConfiguration::once())?.as_bytes(),
+          serde_yaml::to_string(ApixConfiguration::once())?,
           &theme,
           "yaml",
           enable_color,
@@ -89,14 +89,14 @@ async fn main() -> Result<()> {
           if let Some(old_value) = ApixConfiguration::once().set(key.to_string(), value.to_string()) {
             println!("Replaced config key");
             pretty_print(
-              format!("-{}: {}\n+{}: {}\n", key, old_value, key, value).as_bytes(),
+              format!("-{}: {}\n+{}: {}\n", key, old_value, key, value),
               &theme,
               "diff",
               enable_color,
             )?;
           } else {
             println!("Set config key");
-            pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
+            pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
           }
           ApixConfiguration::once().save()?;
         }
@@ -104,14 +104,14 @@ async fn main() -> Result<()> {
       Some(("get", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().get(key) {
-          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
+          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
         }
       }
       Some(("delete", matches)) => {
         let key = matches.value_of("name").unwrap();
         if let Some(value) = ApixConfiguration::once().delete(key) {
           println!("Deleted config key");
-          pretty_print(format!("{}: {}\n", key, value).as_bytes(), &theme, "yaml", enable_color)?;
+          pretty_print(format!("{}: {}\n", key, value), &theme, "yaml", enable_color)?;
           ApixConfiguration::once().save()?;
         }
       }

@@ -1,4 +1,4 @@
-use super::display::{pretty_print, HttpDisplay};
+use super::display::{pretty_print, print_separator, HttpDisplay};
 use super::http_utils::Language;
 use super::progress_component::FileProgressComponent;
 use anyhow::Result;
@@ -9,6 +9,7 @@ use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_ENCODING, CONTENT_LENGTH, CONTENT_TYPE, USER_AGENT},
   Body, Client, Method,
 };
+use serde_json::Value;
 use std::fs::File;
 use std::str::FromStr;
 use tokio::fs::File as AsyncFile;
@@ -36,7 +37,7 @@ fn merge_with_defaults(headers: &HeaderMap) -> HeaderMap {
 }
 
 pub enum AdvancedBody {
-  Json(serde_json::Value),
+  Json(Value),
   String(String),
   File(String),
 }
@@ -102,6 +103,7 @@ pub async fn make_request(
   if options.verbose {
     req.print(options.theme, options.enable_color)?;
     println!();
+    print_separator();
   }
   let result = client.execute(req).await?;
   if options.verbose {
@@ -132,7 +134,7 @@ pub async fn make_request(
     let response_body = result.text().await?;
     if !response_body.is_empty() {
       pretty_print(
-        response_body.as_bytes(),
+        response_body,
         options.theme,
         language.unwrap_or_default(),
         options.enable_color,

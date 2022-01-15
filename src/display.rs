@@ -4,20 +4,43 @@ use super::http_utils::Language;
 use anyhow::Result;
 use bat::{Input, PrettyPrinter};
 use reqwest::{Request, Response};
+use serde_json::Value;
+use term_size::dimensions_stdout;
 use url::Position;
 
 pub trait HttpDisplay {
   fn print(&self, theme: &str, enable_color: bool) -> Result<()>;
 }
 
-pub fn pretty_print(content: &[u8], theme: &str, language: &str, enable_color: bool) -> Result<()> {
-  PrettyPrinter::new()
-    .input(Input::from_reader(content))
-    .language(language)
-    .colored_output(enable_color)
-    .theme(theme)
-    .print()
-    .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
+pub fn print_separator() {
+  if let Some((width, _)) = dimensions_stdout() {
+    println!("{}", "─".repeat(width));
+  }
+}
+
+pub fn pretty_print(content: String, theme: &str, language: &str, enable_color: bool) -> Result<()> {
+  match language {
+    "json" => {
+      let json: Value = serde_json::from_str(&content)?;
+      let formatted = serde_json::to_string_pretty(&json)?;
+      PrettyPrinter::new()
+        .input(Input::from_reader(formatted.as_bytes()))
+        .language(language)
+        .colored_output(enable_color)
+        .theme(theme)
+        .print()
+        .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
+    }
+    _ => {
+      PrettyPrinter::new()
+        .input(Input::from_reader(content.as_bytes()))
+        .language(language)
+        .colored_output(enable_color)
+        .theme(theme)
+        .print()
+        .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
+    }
+  }
   Ok(())
 }
 
@@ -50,13 +73,19 @@ impl HttpDisplay for Request {
     for (key, value) in self.headers() {
       output.push_str(&format!("{}: {}\n", key.as_str(), value.to_str()?));
     }
-    pretty_print(output.as_bytes(), theme, "yaml", enable_color)?;
+    pretty_print(output, theme, "yaml", enable_color)?;
 
     // pretty print body if present and it has a content type that match a language
     if let (Some(body), Some(language)) = (self.body(), self.get_language()) {
       println!();
       if let Some(bytes) = body.as_bytes() {
-        pretty_print(bytes, theme, language, enable_color)?;
+        PrettyPrinter::new()
+          .input(Input::from_reader(bytes))
+          .language(language)
+          .colored_output(enable_color)
+          .theme(theme)
+          .print()
+          .map_err(|err| anyhow::anyhow!("Failed to print result: {:#}", err))?;
       }
     }
     Ok(())
@@ -73,7 +102,7 @@ impl HttpDisplay for Response {
     for (key, value) in self.headers() {
       output.push_str(&format!("{}: {}\n", key.as_str(), value.to_str()?));
     }
-    pretty_print(output.as_bytes(), theme, "yaml", enable_color)?;
+    pretty_print(output, theme, "yaml", enable_color)?;
     Ok(())
   }
 }
