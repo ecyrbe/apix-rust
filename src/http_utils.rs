@@ -38,7 +38,7 @@ where
         Ok(content_type) if content_type.contains("text") => Some("txt"),
         _ => Some("binary"),
       },
-      _ => None,
+      _ => Some("binary"),
     }
   }
 }
