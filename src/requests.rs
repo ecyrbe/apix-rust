@@ -36,6 +36,7 @@ fn merge_with_defaults(headers: &HeaderMap) -> HeaderMap {
   merged
 }
 
+#[derive(Debug, Clone)]
 pub enum AdvancedBody {
   Json(Value),
   String(String),
@@ -53,11 +54,12 @@ impl AdvancedBody {
   }
 }
 
+#[derive(Debug, Clone)]
 pub struct RequestOptions<'a> {
   pub verbose: bool,
   pub theme: &'a str,
   pub is_output_terminal: bool,
-  pub output_filename: Option<&'a str>,
+  pub output_filename: Option<String>,
 }
 
 pub async fn make_request(
@@ -121,6 +123,7 @@ pub async fn make_request(
         .path_segments()
         .and_then(|segments| segments.last())
         .unwrap_or("unknown.bin")
+        .to_owned()
     };
 
     let progress_bar = FileProgressComponent::new_download(filename.to_owned(), result.content_length().unwrap_or(0));

@@ -1,0 +1,19 @@
+# example to execute this request:
+# apix exec postman-echo-stream
+apiVersion: apix.io/v1
+metadata:
+  name: postman-echo-stream
+  annotations:
+    apix.io/created-by: ecyrbe
+    apix.io/created-at: "2022-01-12T20:00:09.830263999+00:00"
+    apix.io/output-file: stream.json
+kind: Request
+spec:
+  request:
+    method: get
+    url: https://postman-echo.com/stream/100
+    headers:
+      accept: application/json
+    queries:
+      param1: value1
+      param2: value2

@@ -8,7 +8,6 @@ metadata:
   annotations:
     apix.io/created-by: ecyrbe
     apix.io/created-at: "2022-01-12T20:00:09.830263999+00:00"
-    apix.io/convert-body-string-to-json: "true"
 kind: Request
 spec:
   request:

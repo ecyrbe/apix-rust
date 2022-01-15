@@ -18,21 +18,24 @@ struct RequestTemplate<'a> {
   context: Context,
   convert_body_to_json: bool,
   body_file: Option<String>,
+  output_file: Option<String>,
   file: &'a str,
 }
 
-struct RequestParams {
+#[derive(Debug, Clone)]
+struct RequestParams<'a> {
   url: String,
   method: String,
   headers: HeaderMap,
   queries: IndexMap<String, String>,
   body: Option<AdvancedBody>,
+  options: RequestOptions<'a>,
 }
 
 // ask for all parameters in manifest request
 fn ask_for_required_parameters(
   request: &ApixRequest,
-  params: Option<IndexMap<String, String>>,
+  params: &Option<IndexMap<String, String>>,
 ) -> Result<serde_json::Map<String, serde_json::Value>, anyhow::Error> {
   match params {
     Some(params) => request
@@ -57,7 +60,7 @@ fn ask_for_required_parameters(
 }
 
 impl<'a> RequestTemplate<'a> {
-  fn new(manifest: &'a ApixManifest, file: &'a str, params: Option<IndexMap<String, String>>) -> Result<Self> {
+  fn new(manifest: &'a ApixManifest, file: &'a str, params: &Option<IndexMap<String, String>>) -> Result<Self> {
     match manifest.kind() {
       ApixKind::Request(request) => {
         let parameters = Value::Object(ask_for_required_parameters(request, params)?);
@@ -78,12 +81,17 @@ impl<'a> RequestTemplate<'a> {
           .get_annotation(&"apix.io/body-file".to_string())
           .map(|v| v.to_string());
 
+        let output_file = manifest
+          .get_annotation(&"apix.io/output-file".to_string())
+          .map(|v| v.to_string());
+
         Ok(Self {
           request,
           engine,
           context,
           convert_body_to_json,
           body_file,
+          output_file,
           file,
         })
       }
@@ -99,6 +107,20 @@ impl<'a> RequestTemplate<'a> {
     )?;
     self.context.insert("context", &rendered_context);
     Ok(self)
+  }
+
+  fn render_options(&mut self, options: &RequestOptions<'a>) -> Result<RequestOptions<'a>> {
+    if let (Some(output_file), None) = (self.output_file.as_ref(), options.output_filename.as_ref()) {
+      let render_output_file =
+        self
+          .engine
+          .render_string(&format!("{}#/output-file", self.file), output_file, &self.context)?;
+      return Ok(RequestOptions {
+        output_filename: Some(render_output_file),
+        ..options.clone()
+      });
+    }
+    Ok(options.clone())
   }
 
   fn render_url(&mut self) -> Result<String> {
@@ -177,18 +199,20 @@ impl<'a> RequestTemplate<'a> {
     }
   }
 
-  fn render_request_params(&mut self) -> Result<RequestParams> {
+  fn render_request_params(&mut self, options: &RequestOptions<'a>) -> Result<RequestParams> {
     let url = self.render_url()?;
     let method = self.render_method()?;
     let headers = self.render_headers()?;
     let queries = self.render_queries()?;
     let body = self.render_body()?;
+    let options = self.render_options(options)?;
     Ok(RequestParams {
       url,
       method,
       headers,
       queries,
       body,
+      options,
     })
   }
 }
@@ -199,16 +223,15 @@ pub async fn handle_execute(
   params: Option<IndexMap<String, String>>,
   options: RequestOptions<'_>,
 ) -> Result<()> {
-  let params = RequestTemplate::new(manifest, file, params)?
-    .render_context()?
-    .render_request_params()?;
+  let mut template = RequestTemplate::new(manifest, file, &params)?;
+  let params = template.render_context()?.render_request_params(&options)?;
   make_request(
     &params.url,
     &params.method,
     Some(&params.headers),
     Some(&params.queries),
     params.body,
-    options,
+    params.options,
   )
   .await
 }
