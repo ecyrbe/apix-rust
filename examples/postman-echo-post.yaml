@@ -1,0 +1,21 @@
+# example to execute this request:
+# apix exec postman-echo-post
+apiVersion: apix.io/v1
+metadata:
+  name: postman-echo-post
+kind: Request
+spec:
+  request:
+    method: post
+    url: https://postman-echo.com/post
+    headers:
+      accept: application/json
+    queries:
+      param1: value1
+      param2: value2
+    body:
+      body1: value1
+      body2: value2
+      body3:
+        - item1
+        - item2

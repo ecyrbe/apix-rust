@@ -1,5 +1,5 @@
 # example to execute this request:
-# apix exec -f ./examples/request_with_advanced_template.yaml
+# apix exec request_with_advanced_template
 apiVersion: apix.io/v1
 metadata:
   name: request_with_advanced_template

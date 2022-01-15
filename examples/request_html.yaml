@@ -1,5 +1,5 @@
 # example to execute this request:
-# apix exec -f ./examples/request_html.yaml
+# apix exec request_html
 apiVersion: apix.io/v1
 metadata:
   name: request_html

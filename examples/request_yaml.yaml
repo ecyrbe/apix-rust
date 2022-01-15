@@ -1,5 +1,5 @@
 # example to execute this request:
-# apix exec -f ./examples/request_yaml.yaml
+# apix exec request_yaml
 apiVersion: apix.io/v1
 metadata:
   name: request_yaml

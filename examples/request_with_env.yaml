@@ -1,10 +1,8 @@
 # example to execute this request:
-# apix exec -f ./examples/request_with_env.yaml
+# apix exec request_with_env
 apiVersion: apix.io/v1
 metadata:
   name: request_with_env
-  annotations:
-    apix.io/convert-body-string-to-json: "true"
 kind: Request
 spec:
   context:
@@ -20,10 +18,8 @@ spec:
       content-type: application/json
     # you can use variables from the process environnement with simplified syntax
     # you can use variables from the process environnement with tera get_env function
-    body: |-
-      {
-        "name": "{{ env.USERNAME }}",
-        "dynamicName": "{{ env[context.user] }}",
-        "functionName": "{{ get_env(name='USERNAME') }}",
-        "dynamicFunctionName": "{{ get_env(name=context.user) }}"
-      }
+    body:
+      name: "{{ env.USERNAME }}"
+      dynamicName: "{{ env[context.user] }}"
+      functionName: "{{ get_env(name='USERNAME') }}"
+      dynamicFunctionName: "{{ get_env(name=context.user) }}"

@@ -1,0 +1,15 @@
+# example to execute this request:
+# apix exec postman-echo-post
+apiVersion: apix.io/v1
+metadata:
+  name: postman-echo-delete
+kind: Request
+spec:
+  request:
+    method: delete
+    url: https://postman-echo.com/delete
+    headers:
+      accept: application/json
+    queries:
+      param1: value1
+      param2: value2
