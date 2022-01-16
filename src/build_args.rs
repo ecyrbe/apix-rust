@@ -5,11 +5,12 @@ use clap_complete::Shell;
 use once_cell::sync::Lazy;
 
 pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static ARGS: Lazy<[Arg<'static>; 11]> = Lazy::new(|| {
+  static ARGS: Lazy<[Arg<'static>; 17]> = Lazy::new(|| {
     [
       Arg::new("url")
         .help("url to request, can be a 'Tera' template")
         .required(true)
+        .value_hint(ValueHint::Url)
         .validator(validate_url),
       Arg::new("header")
         .short('H')
@@ -53,9 +54,10 @@ pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .takes_value(true)
         .validator(|param| validate_param(param, RequestParam::Param)),
       Arg::new("proxy")
-        .help("set proxy to use for request")
+        .help("set proxy url to use for request")
         .short('x')
         .long("proxy")
+        .value_hint(ValueHint::Url)
         .takes_value(true),
       Arg::new("proxy-login")
         .help("set proxy login to use for request")
@@ -65,9 +67,34 @@ pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .help("set proxy password to use for request")
         .long("proxy-password")
         .takes_value(true),
+      Arg::new("follow")
+        .help("follow http redirects")
+        .short('F')
+        .long("follow"),
+      Arg::new("max-redirects")
+        .help("set max http redirects to follow")
+        .long("max-redirects")
+        .takes_value(true),
+      Arg::new("timeout")
+        .help("set request timeout in seconds")
+        .long("timeout")
+        .takes_value(true),
+      Arg::new("user-agent")
+        .help("set user agent to send with request")
+        .long("user-agent")
+        .takes_value(true),
+      Arg::new("certificate")
+        .help("add a custom certificate authority")
+        .long("certificate")
+        .takes_value(true)
+        .multiple_occurrences(true)
+        .value_hint(ValueHint::FilePath),
+      Arg::new("bind-address")
+        .help("set bind address for request")
+        .long("bind-address")
+        .takes_value(true),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
-        .short('i')
         .long("insecure"),
     ]
   });
