@@ -197,6 +197,32 @@ OPTIONS:
     -q, --query <query>      set query name:value to send with request
     -v, --verbose            print full request and response
 ```
+## Proxy
+
+Apix uses system proxy by default. System proxy is taken from `HTTP_PROXY` and `HTTPS_PROXY` environment variables.
+You can ovverride system proxy manually, either with request annotations on manifest files or on the command line.
+Apix support `HTTP`, `HTTPS` and `SOCKS5` proxies.
+
+Here are the options available for configuring the proxy on the command line :
+```bash
+  -x, --proxy <url>             set proxy to use for request
+  --proxy-login <login>         set proxy login to use for request
+  --proxy-password <password>   set proxy password to use for request
+```
+Here are the options available for configuting the proxy on manifests
+```yaml
+metadata:
+  annotations:
+    apix.io/proxy-url: <url>
+    apix.io/proxy-login: <login>
+    apix.io/proxy-password: <paswword>
+```
+_example URL for proxies_:
+ | HTTP                  | HTTPS                  | SOCKS5                  |
+ | --------------------- | ---------------------- | ----------------------- |
+ | http://localhost:3128 | https://localhost:3128 | socks5://localhost:1080 |
+
+
 # Persistance
 
 |   type   | persist mode | gitignore |               description               |
