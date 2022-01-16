@@ -1,9 +1,19 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+    paths:
+      - src/**
+      - Cargo.lock
+      - Cargo.toml
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    paths:
+      - src/**
+      - Cargo.lock
+      - Cargo.toml
 env:
   CARGO_TERM_COLOR: always
 jobs:
