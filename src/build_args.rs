@@ -5,7 +5,7 @@ use clap_complete::Shell;
 use once_cell::sync::Lazy;
 
 pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static ARGS: Lazy<[Arg<'static>; 8]> = Lazy::new(|| {
+  static ARGS: Lazy<[Arg<'static>; 11]> = Lazy::new(|| {
     [
       Arg::new("url")
         .help("url to request, can be a 'Tera' template")
@@ -52,6 +52,19 @@ pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .multiple_occurrences(true)
         .takes_value(true)
         .validator(|param| validate_param(param, RequestParam::Param)),
+      Arg::new("proxy")
+        .help("set proxy to use for request")
+        .short('x')
+        .long("proxy")
+        .takes_value(true),
+      Arg::new("proxy-login")
+        .help("set proxy login to use for request")
+        .long("proxy-login")
+        .takes_value(true),
+      Arg::new("proxy-password")
+        .help("set proxy password to use for request")
+        .long("proxy-password")
+        .takes_value(true),
       Arg::new("insecure")
         .help("allow insecure connections when using https")
         .short('i')
@@ -62,7 +75,7 @@ pub fn build_request_args() -> impl Iterator<Item = &'static Arg<'static>> {
 }
 
 pub fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
-  static EXEC_ARGS: Lazy<[Arg<'static>; 3]> = Lazy::new(|| {
+  static EXEC_ARGS: Lazy<[Arg<'static>; 6]> = Lazy::new(|| {
     [
       Arg::new("name").help("name of the request to execute").index(1),
       Arg::new("file")
@@ -79,6 +92,19 @@ pub fn build_exec_args() -> impl Iterator<Item = &'static Arg<'static>> {
         .multiple_occurrences(true)
         .takes_value(true)
         .validator(|param| validate_param(param, RequestParam::Param)),
+      Arg::new("proxy")
+        .help("set proxy to use for request")
+        .short('x')
+        .long("proxy")
+        .takes_value(true),
+      Arg::new("proxy-login")
+        .help("set proxy login to use for request")
+        .long("proxy-login")
+        .takes_value(true),
+      Arg::new("proxy-password")
+        .help("set proxy password to use for request")
+        .long("proxy-password")
+        .takes_value(true),
     ]
   });
   EXEC_ARGS.iter()

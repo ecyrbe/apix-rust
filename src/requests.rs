@@ -60,6 +60,9 @@ pub struct RequestOptions<'a> {
   pub theme: &'a str,
   pub is_output_terminal: bool,
   pub output_filename: Option<String>,
+  pub proxy_url: Option<String>,
+  pub proxy_login: Option<String>,
+  pub proxy_password: Option<String>,
 }
 
 pub async fn make_request(
@@ -70,7 +73,15 @@ pub async fn make_request(
   body: Option<AdvancedBody>,
   options: RequestOptions<'_>,
 ) -> Result<()> {
-  let client = Client::builder().gzip(true).build()?;
+  let mut client_builder = Client::builder();
+  if let Some(proxy_url) = options.proxy_url {
+    let mut proxy = reqwest::Proxy::all(&proxy_url)?;
+    if let (Some(proxy_login), Some(proxy_password)) = (options.proxy_login, options.proxy_password) {
+      proxy = proxy.basic_auth(&proxy_login, &proxy_password);
+    }
+    client_builder = client_builder.proxy(proxy);
+  }
+  let client = client_builder.gzip(true).build()?;
   let mut builder = client.request(Method::from_str(&method.to_uppercase())?, url);
   if let Some(headers) = headers {
     builder = builder.headers(merge_with_defaults(headers))

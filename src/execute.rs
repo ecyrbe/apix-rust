@@ -16,10 +16,8 @@ struct RequestTemplate<'a> {
   request: &'a ApixRequest,
   engine: Tera,
   context: Context,
-  convert_body_to_json: bool,
-  body_file: Option<String>,
-  output_file: Option<String>,
   file: &'a str,
+  annotations: IndexMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -65,34 +63,25 @@ impl<'a> RequestTemplate<'a> {
       ApixKind::Request(request) => {
         let parameters = Value::Object(ask_for_required_parameters(request, params)?);
         let env: HashMap<String, String> = std::env::vars().collect();
-        let engine = Tera::default();
+        let mut engine = Tera::default();
         let mut context = Context::new();
 
         context.insert("manifest", &manifest);
         context.insert("parameters", &parameters);
         context.insert("env", &env);
 
-        let convert_body_to_json = manifest
-          .get_annotation(&"apix.io/convert-body-string-to-json".to_string())
-          .map(|v| bool::from_str(v).unwrap_or(false))
-          .unwrap_or(false);
-
-        let body_file = manifest
-          .get_annotation(&"apix.io/body-file".to_string())
-          .map(|v| v.to_string());
-
-        let output_file = manifest
-          .get_annotation(&"apix.io/output-file".to_string())
-          .map(|v| v.to_string());
+        let annotations = engine.render_map(
+          &format!("{}#/annotations", file),
+          manifest.get_annotations().unwrap_or(&IndexMap::<String, String>::new()),
+          &context,
+        )?;
 
         Ok(Self {
           request,
           engine,
           context,
-          convert_body_to_json,
-          body_file,
-          output_file,
           file,
+          annotations,
         })
       }
       _ => Err(anyhow::anyhow!("Request manifest expected")),
@@ -109,18 +98,19 @@ impl<'a> RequestTemplate<'a> {
     Ok(self)
   }
 
-  fn render_options(&mut self, options: &RequestOptions<'a>) -> Result<RequestOptions<'a>> {
-    if let (Some(output_file), None) = (self.output_file.as_ref(), options.output_filename.as_ref()) {
-      let render_output_file =
-        self
-          .engine
-          .render_string(&format!("{}#/output-file", self.file), output_file, &self.context)?;
-      return Ok(RequestOptions {
-        output_filename: Some(render_output_file),
-        ..options.clone()
-      });
+  fn render_options(&mut self, options: &RequestOptions<'a>) -> RequestOptions<'a> {
+    let output_filename = self.annotations.get("apix.io/output-file").map(String::to_owned);
+    let proxy_url = self.annotations.get("apix.io/proxy-url").map(String::to_owned);
+    let proxy_login = self.annotations.get("apix.io/proxy-login").map(String::to_owned);
+    let proxy_password = self.annotations.get("apix.io/proxy-password").map(String::to_owned);
+    let options = options.clone();
+    RequestOptions {
+      output_filename: options.output_filename.or(output_filename),
+      proxy_url: options.proxy_url.or(proxy_url),
+      proxy_login: options.proxy_login.or(proxy_login),
+      proxy_password: options.proxy_password.or(proxy_password),
+      ..options
     }
-    Ok(options.clone())
   }
 
   fn render_url(&mut self) -> Result<String> {
@@ -171,10 +161,10 @@ impl<'a> RequestTemplate<'a> {
   fn render_body(&mut self) -> Result<Option<AdvancedBody>> {
     match (
       self.request.request.body.as_ref(),
-      self.convert_body_to_json,
-      self.body_file.as_ref(),
+      self.annotations.get("apix.io/convert-body-to-json"),
+      self.annotations.get("apix.io/body-file"),
     ) {
-      (Some(Value::String(body)), true, _) => {
+      (Some(Value::String(body)), Some(convert_to_json), _) if convert_to_json == "true" => {
         let string_body = self
           .engine
           .render_string(&format!("{}#/body", self.file), body, &self.context)?;
@@ -188,13 +178,7 @@ impl<'a> RequestTemplate<'a> {
         body,
         &self.context,
       )?))),
-      (None, _, Some(filepath)) => {
-        let render_filepath =
-          self
-            .engine
-            .render_string(&format!("{}#/body-file", self.file), filepath, &self.context)?;
-        Ok(Some(AdvancedBody::File(render_filepath)))
-      }
+      (None, _, Some(filepath)) => Ok(Some(AdvancedBody::File(filepath.to_owned()))),
       (None, _, None) => Ok(None),
     }
   }
@@ -205,7 +189,7 @@ impl<'a> RequestTemplate<'a> {
     let headers = self.render_headers()?;
     let queries = self.render_queries()?;
     let body = self.render_body()?;
-    let options = self.render_options(options)?;
+    let options = self.render_options(options);
     Ok(RequestParams {
       url,
       method,

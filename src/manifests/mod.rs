@@ -295,7 +295,7 @@ impl ApixManifest {
 
   pub fn find_manifest_filename(kind: &str, name: &str) -> Option<String> {
     Self::find_manifest(kind, name)
-      .map(|(path, _)| path.to_str().map(|s| s.to_string()))
+      .map(|(path, _)| path.to_str().map(str::to_string))
       .flatten()
   }
 
@@ -403,6 +403,14 @@ impl ApixManifest {
   pub fn get_annotation(&self, key: &str) -> Option<&String> {
     match self {
       ApixManifest::V1(manifest) => manifest.metadata.annotations.get(key),
+      ApixManifest::None => None,
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn get_annotations(&self) -> Option<&IndexMap<String, String>> {
+    match self {
+      ApixManifest::V1(manifest) => Some(&manifest.metadata.annotations),
       ApixManifest::None => None,
     }
   }

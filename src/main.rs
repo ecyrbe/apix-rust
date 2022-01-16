@@ -130,7 +130,10 @@ async fn main() -> Result<()> {
             verbose: matches.is_present("verbose"),
             theme: &theme,
             is_output_terminal,
-            output_filename: matches.value_of("output-file").map(|s| s.to_string()),
+            output_filename: matches.value_of("output-file").map(str::to_string),
+            proxy_url: matches.value_of("proxy").map(str::to_string),
+            proxy_login: matches.value_of("proxy-login").map(str::to_string),
+            proxy_password: matches.value_of("proxy-password").map(str::to_string),
           },
         )
         .await?;
@@ -146,7 +149,10 @@ async fn main() -> Result<()> {
                 verbose: matches.is_present("verbose"),
                 theme: &theme,
                 is_output_terminal,
-                output_filename: matches.value_of("output-file").map(|s| s.to_string()),
+                output_filename: matches.value_of("output-file").map(str::to_string),
+                proxy_url: matches.value_of("proxy").map(str::to_string),
+                proxy_login: matches.value_of("proxy-login").map(str::to_string),
+                proxy_password: matches.value_of("proxy-password").map(str::to_string),
               },
             )
             .await?;
@@ -250,7 +256,10 @@ async fn main() -> Result<()> {
             verbose: matches.is_present("verbose"),
             theme: &theme,
             is_output_terminal,
-            output_filename: matches.value_of("output-file").map(|s| s.to_string()),
+            output_filename: matches.value_of("output-file").map(str::to_string),
+            proxy_url: matches.value_of("proxy").map(str::to_string),
+            proxy_login: matches.value_of("proxy-login").map(str::to_string),
+            proxy_password: matches.value_of("proxy-password").map(str::to_string),
           },
         )
         .await?;
