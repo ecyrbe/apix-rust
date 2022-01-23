@@ -72,8 +72,8 @@ pub struct ApixStep {
  * exemple of a story in yaml
  *
  * ```yaml
- * name: "get_user"
- * description: "Get a user by retriving a token first"
+ * name: get_user
+ * description: Get a user by retriving a token first
  * context:
  *   dev:
  *      url: "https://dev.apix.io"
@@ -112,8 +112,8 @@ pub struct ApixStory {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ApixStories {
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
-  parameters: Vec<ApixParameter>,
-  stories: Vec<ApixStory>,
+  pub parameters: Vec<ApixParameter>,
+  pub stories: Vec<ApixStory>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -211,6 +211,40 @@ pub enum ApixKind {
 impl Default for ApixKind {
   fn default() -> Self {
     ApixKind::None
+  }
+}
+
+impl ApixKind {
+  #[allow(dead_code)]
+  pub fn as_api(&self) -> Option<&ApixApi> {
+    match self {
+      ApixKind::Api(api) => Some(api),
+      _ => None,
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn as_configuration(&self) -> Option<&ApixConfiguration> {
+    match self {
+      ApixKind::Configuration(configuration) => Some(configuration),
+      _ => None,
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn as_request(&self) -> Option<&ApixRequest> {
+    match self {
+      ApixKind::Request(request) => Some(request),
+      _ => None,
+    }
+  }
+
+  #[allow(dead_code)]
+  pub fn as_story(&self) -> Option<&ApixStories> {
+    match self {
+      ApixKind::Story(story) => Some(story),
+      _ => None,
+    }
   }
 }
 

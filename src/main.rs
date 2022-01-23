@@ -17,6 +17,7 @@ use build_args::build_cli;
 use clap::App;
 use clap_complete::{generate, Generator, Shell};
 use cmd_lib::run_cmd;
+use comfy_table::{ContentArrangement, Table};
 use display::{pretty_print, pretty_print_file};
 use editor::edit_file;
 use execute::handle_execute;
@@ -223,12 +224,54 @@ async fn main() -> Result<()> {
               println!("No resource of type {} where found with name {}", kind, name);
             }
           } else if let Ok(manifests) = ApixManifest::find_manifests_by_kind(kind) {
-            let mut printed = false;
-            for (path, _) in manifests {
-              pretty_print_file(path, &theme, "yaml", is_output_terminal)?;
-              printed = true;
-            }
-            if !printed {
+            let mut manifests = manifests.peekable();
+            let found = manifests.peek().is_some();
+            if found {
+              if !is_output_terminal {
+                for (path, _) in manifests {
+                  pretty_print_file(path, &theme, "yaml", false)?;
+                }
+              } else {
+                let mut table = Table::new();
+                table
+                  .load_preset("││──├─┼┤│─┼├┤┬┴╭╮╰╯")
+                  .set_content_arrangement(ContentArrangement::Dynamic);
+                match kind {
+                  "request" => {
+                    table.set_header(["Name", "Method", "Url", "Last Modified"]);
+                    for (_, manifest) in manifests {
+                      let request = manifest.kind().as_request().unwrap();
+                      table.add_row(vec![
+                        manifest.name(),
+                        &request.request.method.to_uppercase(),
+                        &request.request.url,
+                        &manifest
+                          .get_annotation("apix.io/created-at")
+                          .map(String::clone)
+                          .unwrap_or_default(),
+                      ]);
+                    }
+                    println!("{table}");
+                  }
+                  "story" => {
+                    table.set_header(["Name", "Stories", "Last Modified"]);
+                    for (_, manifest) in manifests {
+                      let story = manifest.kind().as_story().unwrap();
+                      table.add_row(vec![
+                        manifest.name(),
+                        &story.stories.len().to_string(),
+                        &manifest
+                          .get_annotation("apix.io/created-at")
+                          .map(String::clone)
+                          .unwrap_or_default(),
+                      ]);
+                    }
+                    println!("{table}");
+                  }
+                  _ => {}
+                }
+              }
+            } else {
               println!("No resources of type {} where found", kind);
             }
           } else {
