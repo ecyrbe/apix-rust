@@ -64,7 +64,7 @@ checksum = "84450d0b4a8bd1ba4144ce8ce718fbc5d071358b1e5384bace6536b3d1f2d5b3"
 
 [[package]]
 name = "apix"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "atty",
